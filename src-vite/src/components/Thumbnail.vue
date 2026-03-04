@@ -35,7 +35,7 @@
       <!-- status badges -->
       <div
         v-if="statusBadges.length > 0"
-        class="pointer-events-none absolute inset-x-0 top-0 h-16 bg-linear-to-b from-black/48 via-black/12 to-transparent"
+        class="pointer-events-none absolute inset-x-0 top-0 h-16"
       />
       <div
         v-if="statusBadges.length > 0"

@@ -119,6 +119,9 @@ listen('settings-navigatorViewMode-changed', (event) => {
 listen('settings-navigatorViewSize-changed', (event) => {
   config.setNavigatorViewSize(event.payload)
 })
+listen('settings-slideShowTransition-changed', (event) => {
+  config.setSlideShowTransition(event.payload)
+})
 listen('settings-showComment-changed', (event) => {
   config.setShowComment(event.payload)
 })
@@ -131,4 +134,3 @@ listen('settings-imageSearchLimit-changed', (event) => {
 listen('settings-faceClusterThresholdIndex-changed', (event) => {
   config.setFaceClusterThresholdIndex(event.payload)
 })
-  

@@ -65,7 +65,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick } from 'vue';
+import { ref, nextTick, onBeforeUnmount } from 'vue';
 import { config } from '@/common/config';
 import type { Component } from 'vue';
 
@@ -122,10 +122,19 @@ const buttonRef = ref<HTMLElement | null>(null);
 const tooltipRef = ref<HTMLElement | null>(null);
 const isHovered = ref(false);
 const tooltipStyle = ref<Record<string, string>>({});
+let tooltipTimer: ReturnType<typeof setTimeout> | null = null;
+
+const clearTooltipTimer = () => {
+  if (tooltipTimer) {
+    clearTimeout(tooltipTimer);
+    tooltipTimer = null;
+  }
+};
 
 const showTooltip = async () => {
   if (!props.tooltip || !config.settings.showToolTip) return;
-  
+
+  clearTooltipTimer();
   isHovered.value = true;
   await nextTick();
   
@@ -156,9 +165,19 @@ const showTooltip = async () => {
       left: `${left}px`,
     };
   }
+
+  tooltipTimer = setTimeout(() => {
+    isHovered.value = false;
+    tooltipTimer = null;
+  }, 3000);
 };
 
 const hideTooltip = () => {
+  clearTooltipTimer();
   isHovered.value = false;
 };
+
+onBeforeUnmount(() => {
+  clearTooltipTimer();
+});
 </script>

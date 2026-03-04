@@ -25,18 +25,21 @@
           :class="{ 'cursor-pointer text-primary': tempViewMode !== 'none' }" 
           @click="handleTitleClick"
         />
-        <div class="overflow-hidden min-w-0">
-          <div v-if="contentTitle" class="breadcrumbs p-0 min-h-0" data-tauri-drag-region>
-            <ul>
-              <li v-for="(seg, idx) in titleSegments" :key="idx">
+        <div class="overflow-hidden min-w-0 w-fit max-w-full">
+          <div v-if="contentTitle" class="breadcrumbs p-0 min-h-0 overflow-hidden" data-tauri-drag-region>
+            <ul class="min-w-0 flex-nowrap overflow-hidden">
+              <li v-for="(seg, idx) in titleSegments" :key="idx" class="min-w-0 max-w-full overflow-hidden">
                 <a
                   v-if="idx < titleSegments.length - 1"
-                  class="cursor-pointer text-base-content/50 hover:text-primary transition-colors"
+                  class="block max-w-[16rem] truncate cursor-pointer text-base-content/50 hover:text-primary transition-colors"
                   @click.stop="handleBreadcrumbClick(idx)"
                 >{{ seg }}</a>
                 <span
                   v-else
-                  :class="{ 'cursor-pointer text-primary': tempViewMode !== 'none' }"
+                  :class="[
+                    'block truncate',
+                    { 'cursor-pointer text-primary': tempViewMode !== 'none' }
+                  ]"
                   @click="handleTitleClick"
                 >{{ seg }}</span>
               </li>
@@ -99,7 +102,7 @@
 
         <!-- select and layout section -->
         <div class="flex flex-row items-center">
-          <IconSeparator class="t-icon-size-sm text-base-content/30" />
+          <IconSeparator class="t-icon-size text-base-content/30" />
           
           <!-- refresh file list -->
           <!-- Bugfix: need to update album files when the album is updated -->
@@ -139,7 +142,18 @@
             @click="toggleFilmstripView"
           />
 
-          <!-- toggle info panel -->
+          <IconSeparator class="t-icon-size text-base-content/30" />
+
+          <!-- toggle edit panel -->
+          <TButton
+            :icon="IconImageEdit"
+            :tooltip="$t('msgbox.image_editor.transform')"
+            :selected="showTransform"
+            :disabled="isIndexing || showQuickView || selectMode || selectedItemIndex < 0 || fileList[selectedItemIndex]?.file_type !== 1"
+            @click="showTransform = true"
+          />
+
+          <!-- toggle dedup panel -->
           <TButton
             :icon="IconSimilar"
             :tooltip="$t('toolbar.tooltip.open_dedup')"
@@ -148,6 +162,7 @@
             @click="toggleDedupPanel"
           />
 
+          <!-- toggle info panel -->
           <TButton
             :icon="IconInformation"
             :tooltip="config.infoPanel.show ? $t('toolbar.tooltip.hide_info') : $t('toolbar.tooltip.show_info')"
@@ -243,6 +258,7 @@
                 :fileIndex="selectedItemIndex"
                 :fileCount="fileList.length"
                 :isSlideShow="isSlideShow"
+                :canSlideShow="true"
                 :imageScale="imageScale"
                 :imageMinScale="imageMinScale"
                 :imageMaxScale="imageMaxScale"
@@ -293,6 +309,7 @@
               :fileIndex="selectedItemIndex"
               :fileCount="fileList.length"
               :isSlideShow="isSlideShow"
+              :canSlideShow="true"
               :imageScale="imageScale"
               :imageMinScale="imageMinScale"
               :imageMaxScale="imageMaxScale"
@@ -570,6 +587,7 @@ import {
   IconInformation,
   IconPhotoSearch,
   IconSimilar,
+  IconImageEdit,
   IconPersonSearch,
   IconFolderSearch,
   IconCalendarMonth,
@@ -1590,6 +1608,16 @@ onMounted( async() => {
                pane,
              });
            }
+        }
+        break;
+      case 'update-file-meta':
+        const targetFileId = Number((event.payload as any).fileId);
+        const changes = (event.payload as any).changes || {};
+        if (targetFileId > 0) {
+          const index = fileList.value.findIndex(file => file.id === targetFileId);
+          if (index !== -1) {
+            Object.assign(fileList.value[index], changes);
+          }
         }
         break;
       default:
@@ -2838,6 +2866,15 @@ const updateThumbForFile = async (file: any) => {
   }
 }
 
+const syncFileMetaToImageViewer = async (fileId: number, changes: Record<string, any>) => {
+  if (!fileId || !changes || Object.keys(changes).length === 0) return;
+  tauriEmit('message-from-content', {
+    message: 'update-file-meta',
+    fileId,
+    changes,
+  });
+};
+
 // toggle the selected file's favorite status (selectMode = false)
 const toggleFavorite = async () => {
   if (selectedItemIndex.value >= 0) {
@@ -2845,6 +2882,7 @@ const toggleFavorite = async () => {
     item.is_favorite = !item.is_favorite;
     // update the favorite status in the database
     await setFileFavorite(item.id, item.is_favorite);
+    syncFileMetaToImageViewer(item.id, { is_favorite: item.is_favorite });
   }
 };
 
@@ -2868,6 +2906,7 @@ const setSelectedFileRating = async (rating: number) => {
     const normalized = item.rating === rating ? 0 : rating;
     item.rating = normalized;
     await setFileRating(item.id, normalized);
+    syncFileMetaToImageViewer(item.id, { rating: normalized });
   }
 };
 
@@ -2973,6 +3012,9 @@ const clickRotate = async () => {
 
     // update the rotate status in the database
     setFileRotate(fileList.value[selectedItemIndex.value].id, fileList.value[selectedItemIndex.value].rotate);
+    syncFileMetaToImageViewer(fileList.value[selectedItemIndex.value].id, {
+      rotate: fileList.value[selectedItemIndex.value].rotate,
+    });
   }
 };
 
@@ -2999,6 +3041,7 @@ const onEditComment = async (newComment: any) => {
       console.log('onEditComment:', newComment);
       file.comments = newComment;
       showCommentMsgbox.value = false;
+      syncFileMetaToImageViewer(file.id, { comments: newComment });
     }
   }
 }
@@ -3189,6 +3232,7 @@ function updateFileHasTags(fileIds: number[]) {
         newFile.has_tags = hasTags;
         // Keep Info tab in sync after tagging dialog closes.
         newFile.tags = hasTags ? ((await getTagsForFile(fileId)) || []) : [];
+        syncFileMetaToImageViewer(fileId, { has_tags: newFile.has_tags, tags: newFile.tags });
       });
     }
   }

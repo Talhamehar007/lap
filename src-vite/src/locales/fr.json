@@ -806,6 +806,12 @@
         "Zoom +/-"
       ],
       "slide_show_interval": "Intervalle: {second} s",
+      "slide_show_transition": "Transition du diaporama",
+      "slide_show_transition_options": [
+        "Glissement",
+        "Fondu",
+        "Aucune"
+      ],
       "auto_play_video": "Lecture auto vidéo",
       "show_comment": "Afficher commentaire",
       "show_comment_hint": "Dans nouvelle fenêtre",

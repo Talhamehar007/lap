@@ -71,7 +71,7 @@
                   :class="libConfig.index.albumQueue.includes(album.id) ? 'animate-spin' : ''" 
                 />
               </div>
-              <span v-else>
+              <span v-else-if="props.showTotalCount !== false">
                 {{ (album.total ?? 0).toLocaleString() }}
               </span>
             </div>  
@@ -191,6 +191,7 @@ import {
 
 const props = defineProps<{
   selectionSource: SelectionSource;
+  showTotalCount?: boolean;
 }>();
 
 const emit = defineEmits(['editDataChanged']);

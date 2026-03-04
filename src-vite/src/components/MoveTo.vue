@@ -4,6 +4,7 @@
     <div class="h-[400px] border border-base-content/5 rounded-box bg-base-300/30 shadow-sm overflow-auto">
       <AlbumList ref="albumListRef" 
         selectionSource="destFolder"
+        :showTotalCount="false"
       />
     </div>
 

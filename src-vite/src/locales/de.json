@@ -806,6 +806,12 @@
         "Zoom +/-"
       ],
       "slide_show_interval": "Intervall: {second} s",
+      "slide_show_transition": "Diashow-Übergang",
+      "slide_show_transition_options": [
+        "Schieben",
+        "Überblenden",
+        "Keine"
+      ],
       "auto_play_video": "Video Autoplay",
       "show_comment": "Kommentar zeigen",
       "show_comment_hint": "In neuem Fenster",

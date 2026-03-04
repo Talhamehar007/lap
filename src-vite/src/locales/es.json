@@ -806,6 +806,12 @@
         "Zoom in/out"
       ],
       "slide_show_interval": "Intervalo: {second} s",
+      "slide_show_transition": "Transición de presentación",
+      "slide_show_transition_options": [
+        "Deslizar",
+        "Fundido",
+        "Ninguna"
+      ],
       "auto_play_video": "Autoreproducir vídeo",
       "show_comment": "Mostrar comentario",
       "show_comment_hint": "Mostrar en nueva ventana",

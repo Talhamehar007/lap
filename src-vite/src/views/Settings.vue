@@ -155,6 +155,14 @@
                  <option v-for="(option, index) in navigatorViewSizeOptions" :key="index" :value="option.value">{{ option.label }}</option>
               </select>
             </div>
+            <div class="flex items-center justify-between p-2 rounded-box hover:bg-base-100/10 transition-colors duration-200">
+              <div class="flex flex-col gap-0.5">
+                <div>{{ $t('settings.image_view.slide_show_transition') }}</div>
+              </div>
+               <select class="select select-bordered select-sm min-w-32" v-model="config.settings.slideShowTransition">
+                 <option v-for="(option, index) in slideShowTransitionOptions" :key="index" :value="option.value">{{ option.label }}</option>
+              </select>
+            </div>
             <!-- Mouse Wheel -->
             <!-- <div class="flex items-center justify-between p-2 rounded-box hover:bg-base-100/10 transition-colors duration-200">
               <div class="flex flex-col gap-0.5">
@@ -164,15 +172,6 @@
                  <option v-for="(item, index) in wheelOptions" :key="index" :value="item.value">{{ item.label }}</option>
               </select>
             </div> -->
-            <!-- Slide Show -->
-            <div class="flex items-center justify-between p-2 min-h-12 rounded-box hover:bg-base-100/10 transition-colors duration-200">
-              <div class="flex flex-col gap-0.5">
-                <div class="text-nowrap">{{ $t('settings.image_view.slide_show_interval', { second: getSlideShowInterval(config.settings.slideShowInterval) }) }}</div>
-              </div>
-              <div class="w-48 flex justify-end">
-                <SliderInput v-model="config.settings.slideShowInterval" :min="0" :max="5" :step="1" label="" />
-              </div>
-            </div>
             <!-- Auto Play Video -->
              <div class="flex items-center justify-between p-2 rounded-box hover:bg-base-100/10 transition-colors duration-200">
               <div class="flex flex-col gap-0.5">
@@ -361,6 +360,17 @@ const navigatorViewSizeOptions = computed(() => {
   return result;
 });
 
+const slideShowTransitionOptions = computed(() => {
+  const options = localeMsg.value.settings.image_view.slide_show_transition_options;
+  const result = [];
+
+  for (let i = 0; i < options.length; i++) {
+    result.push({ label: options[i], value: i });
+  }
+
+  return result;
+});
+
 const filmStripViewPreviewPositionOptions = computed(() => {
   const options = localeMsg.value.settings.filmstrip_view.preview_position_options;
   const result = [];
@@ -460,14 +470,14 @@ watch(() => config.settings.grid.previewPosition, (newValue) => {
 // watch(() => config.settings.mouseWheelMode, (newValue) => {
 //   emit('settings-mouseWheelMode-changed', newValue);
 // });
-watch(() => config.settings.slideShowInterval, (newValue) => {
-  emit('settings-slideShowInterval-changed', newValue);
-});
 watch(() => config.settings.navigatorViewMode, (newValue) => {
   emit('settings-navigatorViewMode-changed', newValue);
 });
 watch(() => config.settings.navigatorViewSize, (newValue) => {
   emit('settings-navigatorViewSize-changed', newValue);
+});
+watch(() => config.settings.slideShowTransition, (newValue) => {
+  emit('settings-slideShowTransition-changed', newValue);
 });
 watch(() => config.settings.autoPlayVideo, (newValue) => {
   emit('settings-autoPlayVideo-changed', newValue);

@@ -806,6 +806,12 @@
         "Зум +/-"
       ],
       "slide_show_interval": "Интервал: {second} сек",
+      "slide_show_transition": "Переход слайд-шоу",
+      "slide_show_transition_options": [
+        "Сдвиг",
+        "Затухание",
+        "Нет"
+      ],
       "auto_play_video": "Автовоспроизведение видео",
       "show_comment": "Показывать комментарий",
       "show_comment_hint": "В новом окне",

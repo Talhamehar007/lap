@@ -25,60 +25,87 @@
       <div ref="buttonsRef" class="flex items-center space-x-1">
         <TButton
           :icon="IconPrev"
-          :disabled="fileIndex <= 0 || isSlideShow"
+          :disabled="fileIndex <= 0 || isSlideShow || !canInteract"
           :tooltip="$t('image_viewer.toolbar.prev')"
           @click="triggerPrev" 
         />
         <TButton
           :icon="IconNext"
-          :disabled="fileIndex < 0 || fileIndex >= fileCount - 1 || isSlideShow"
+          :disabled="fileIndex < 0 || fileIndex >= fileCount - 1 || isSlideShow || !canInteract"
           :tooltip="$t('image_viewer.toolbar.next')"
           @click="triggerNext" 
         />
-        <TButton
-          :icon="isSlideShow ? IconPause : IconPlay"
-          :disabled="fileIndex < 0"
-          :selected="isSlideShow"
-          :tooltip="(isSlideShow ? $t('image_viewer.toolbar.pause') : $t('image_viewer.toolbar.slide_show')) + ` (${getSlideShowInterval(config.settings.slideShowInterval)}s)`"
-          @click="handleToggleSlideShow" 
-        />
+        <div class="flex items-center gap-0.5">
+          <TButton
+            :icon="isSlideShow ? IconPause : IconPlay"
+            :disabled="fileIndex < 0 || !canSlideShow || !canInteract"
+            :selected="isSlideShow && canSlideShow"
+            :tooltip="!canSlideShow
+              ? $t('image_viewer.toolbar.slide_show')
+              : (isSlideShow ? $t('image_viewer.toolbar.pause') : $t('image_viewer.toolbar.slide_show'))"
+            @click="handleToggleSlideShow"
+          />
+          <ContextMenu v-if="isSlideShow && canSlideShow"
+            :menuItems="slideShowIntervalMenuItems"
+            :disabled="fileIndex < 0 || !canSlideShow || !canInteract"
+            @open-change="handleMenuOpenChange"
+            @click.stop
+          >
+            <template #trigger="{ toggle }">
+              <button
+                class="h-7 min-w-[38px] px-1.5 inline-flex items-center justify-center gap-0.5 rounded-box text-[11px] font-medium tabular-nums transition-colors"
+                :class="[
+                  fileIndex < 0 || !canSlideShow || !canInteract
+                    ? 'cursor-default text-base-content/30'
+                    : 'text-base-content/45 hover:bg-base-100/30 hover:text-base-content/75'
+                ]"
+                :disabled="fileIndex < 0 || !canSlideShow || !canInteract"
+                :title="$t('settings.image_view.slide_show_interval', { second: getSlideShowInterval(effectiveSlideShowIntervalIndex) })"
+                @click.stop="toggle"
+              >
+                <span>{{ currentSlideShowIntervalLabel }}</span>
+                <IconArrowDown class="w-3 h-3" />
+              </button>
+            </template>
+          </ContextMenu>
+        </div>
         <TButton
           :icon="IconZoomOut"
-          :disabled="fileIndex < 0 || imageScale <= imageMinScale || isSlideShow"
+          :disabled="fileIndex < 0 || imageScale <= imageMinScale || isSlideShow || !canInteract"
           :tooltip="$t('image_viewer.toolbar.zoom_out') + ` (${(imageScale * 100).toFixed(0)}%)`"
           @click="zoomOut"
         />
         <TButton
           :icon="IconZoomIn"
-          :disabled="fileIndex < 0 || imageScale >= imageMaxScale || isSlideShow"
+          :disabled="fileIndex < 0 || imageScale >= imageMaxScale || isSlideShow || !canInteract"
           :tooltip="$t('image_viewer.toolbar.zoom_in') + ` (${(imageScale * 100).toFixed(0)}%)`"
           @click="zoomIn" 
         />
         <TButton
           :icon="!isZoomFit ? IconZoomFit : IconZoomActual"
-          :disabled="fileIndex < 0 || isSlideShow"
+          :disabled="fileIndex < 0 || isSlideShow || !canInteract"
           :tooltip="(!isZoomFit ? $t('image_viewer.toolbar.zoom_fit') : $t('image_viewer.toolbar.zoom_actual')) + ` (${(imageScale * 100).toFixed(0)}%)`"
           @click="$emit('update:isZoomFit', !isZoomFit)"
         />
-        <template v-if="showExtraIcons && mode !== 2">
+        <template v-if="showExtraIcons">
           <IconSeparator class="t-icon-size-sm text-base-content/30" />
           <TButton
             :icon="file?.is_favorite ? IconHeartFilled : IconHeart"
-            :disabled="fileIndex < 0 || isSlideShow"
+            :disabled="fileIndex < 0 || isSlideShow || !canInteract"
             :selected="file?.is_favorite && !isSlideShow"
             :tooltip="file?.is_favorite ? $t('menu.meta.unfavorite') : $t('menu.meta.favorite')"
             @click="$emit('item-action', { action: 'favorite', index: fileIndex })"
           />
           <ContextMenu
             :menuItems="ratingMenuItems"
-            :disabled="fileIndex < 0 || isSlideShow"
+            :disabled="fileIndex < 0 || isSlideShow || !canInteract"
             @open-change="handleMenuOpenChange"
             @click.stop
           >
             <template #trigger="{ toggle }">
               <TButton
                 :icon="Number(file?.rating || 0) > 0 ? IconStarFilled : IconStar"
-                :disabled="fileIndex < 0 || isSlideShow"
+                :disabled="fileIndex < 0 || isSlideShow || !canInteract"
                 :selected="Number(file?.rating || 0) > 0 && !isSlideShow"
                 :tooltip="ratingButtonTooltip"
                 @click.stop="toggle"
@@ -87,21 +114,21 @@
           </ContextMenu>
           <TButton
             :icon="IconTag"
-            :disabled="fileIndex < 0 || isSlideShow"
+            :disabled="fileIndex < 0 || isSlideShow || !canInteract"
             :selected="file?.has_tags && !isSlideShow"
             :tooltip="$t('menu.meta.tag')"
             @click="$emit('item-action', { action: 'tag', index: fileIndex })"
           />
           <TButton
             :icon="IconComment"
-            :disabled="fileIndex < 0 || isSlideShow"
+            :disabled="fileIndex < 0 || isSlideShow || !canInteract"
             :selected="!!file?.comments && !isSlideShow"
             :tooltip="$t('menu.meta.comment')"
             @click="$emit('item-action', { action: 'comment', index: fileIndex })"
           />
           <TButton
             :icon="IconRotate"
-            :disabled="fileIndex < 0 || isSlideShow"
+            :disabled="fileIndex < 0 || isSlideShow || !canInteract"
             :iconStyle="{ transform: `rotate(${file?.rotate ?? 0}deg)`, transition: 'transform 0.3s' }"
             :selected="file?.rotate % 360 > 0 && !isSlideShow"
             :tooltip="$t('menu.meta.rotate')"
@@ -112,7 +139,7 @@
           ref="contextMenuRef"
           :iconMenu="IconMore"
           :menuItems="singleFileMenuItems"
-          :disabled="fileIndex < 0 || isSlideShow"
+          :disabled="fileIndex < 0 || isSlideShow || !canInteract"
           @open-change="handleMenuOpenChange"
           @click.stop
         />
@@ -120,11 +147,12 @@
         <TButton v-if="mode === 0"
           :icon="!isFullScreen ? IconFullScreen : IconRestoreScreen"
           :tooltip="!isFullScreen ? $t('image_viewer.toolbar.fullscreen') : $t('image_viewer.toolbar.exit_fullscreen')"
+          :disabled="!canInteract"
           @click="$emit('toggle-full-screen')"
         />
         <TButton v-if="mode !== 2"
           :icon="config.mediaViewer.isPinned ? IconPin : IconUnPin"
-          :disabled="fileIndex < 0"
+          :disabled="fileIndex < 0 || !canInteract"
           :tooltip="!config.mediaViewer.isPinned ? $t('image_viewer.toolbar.pin') : $t('image_viewer.toolbar.unpin')"
           @click="config.mediaViewer.isPinned = !config.mediaViewer.isPinned"
         />
@@ -132,6 +160,7 @@
           v-if="mode === 0"
           :icon="IconClose"
           :tooltip="$t('image_viewer.toolbar.close')"
+          :disabled="!canInteract"
           @click.stop="$emit('close')"
         />
       </div>
@@ -176,12 +205,15 @@
     </button>
 
     <div
-      v-if="mode === 0 && quickViewStatusBadges.length > 0"
-      class="pointer-events-none absolute inset-x-0 top-0 z-80 h-16 bg-linear-to-b from-black/48 via-black/12 to-transparent"
+      v-if="showStatusBadges && quickViewStatusBadges.length > 0"
+      class="pointer-events-none absolute inset-x-0 top-0 z-80 h-16"
     />
     <div
-      v-if="mode === 0 && quickViewStatusBadges.length > 0"
-      class="pointer-events-none absolute left-2 top-2 z-90 flex max-w-[calc(100%-4rem)] flex-wrap gap-1"
+      v-if="showStatusBadges && quickViewStatusBadges.length > 0"
+      :class="[
+        'pointer-events-none absolute left-2 z-90 flex max-w-[calc(100%-4rem)] flex-wrap gap-1',
+        mode === 2 ? 'top-12' : 'top-2',
+      ]"
     >
       <div
         v-for="badge in quickViewStatusBadges"
@@ -206,6 +238,7 @@
         :rotate="file?.rotate ?? 0" 
         :isZoomFit="isZoomFit"
         :isSlideShow="isSlideShow"
+        :slideShowTransitionMode="slideShowTransitionMode"
         @update:isZoomFit="(val: boolean) => $emit('update:isZoomFit', val)"
         @scale="(e) => $emit('scale', e)"
         @viewport-change="(e) => $emit('viewport-change', e)"
@@ -245,6 +278,7 @@ import {
   IconNext,
   IconPlay,
   IconPause,
+  IconArrowDown,
   IconZoomIn,
   IconZoomOut,
   IconZoomFit,
@@ -263,6 +297,7 @@ import {
   IconTag,
   IconComment,
   IconRotate,
+  IconDot,
 } from '@/common/icons';
 import { isMac } from '@/common/utils';
 import ContextMenu from '@/components/ContextMenu.vue';
@@ -308,6 +343,18 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
+  canSlideShow: {
+    type: Boolean,
+    default: true
+  },
+  slideShowIntervalIndex: {
+    type: Number,
+    default: null
+  },
+  canInteract: {
+    type: Boolean,
+    default: true
+  },
   imageScale: {
     type: Number,
     default: 1
@@ -330,6 +377,7 @@ const emit = defineEmits([
   'prev', 
   'next', 
   'toggle-slide-show', 
+  'update:slideShowIntervalIndex',
   'close', 
   'scale', 
   'update:isZoomFit', 
@@ -366,6 +414,11 @@ const filenameMaxWidth = computed(() => {
   return 200; // Fallback
 });
 const showExtraIcons = computed(() => containerWidth.value > 600);
+const effectiveSlideShowIntervalIndex = computed(() => {
+  return props.slideShowIntervalIndex ?? config.settings.slideShowInterval;
+});
+const currentSlideShowIntervalLabel = computed(() => `${getSlideShowInterval(effectiveSlideShowIntervalIndex.value)}s`);
+const slideShowTransitionMode = computed(() => Number(config.settings.slideShowTransition ?? 0));
 const ratingButtonTooltip = computed(() => {
   const rating = Number(props.file?.rating || 0);
   return rating > 0 ? `${localeMsg.value.favorite.ratings}: ${rating}` : localeMsg.value.favorite.ratings;
@@ -412,6 +465,22 @@ const ratingMenuItems = computed(() => {
   ];
 });
 
+const slideShowIntervalOptions = [1, 3, 5, 10, 15, 30];
+const slideShowIntervalMenuItems = computed(() => {
+  const currentInterval = getSlideShowInterval(effectiveSlideShowIntervalIndex.value);
+  return slideShowIntervalOptions.map((seconds, index) => ({
+    label: `${seconds}s`,
+    icon: currentInterval === seconds ? IconDot : null,
+    action: () => {
+      if (props.slideShowIntervalIndex !== null) {
+        emit('update:slideShowIntervalIndex', index);
+      } else {
+        config.settings.slideShowInterval = index;
+      }
+    },
+  }));
+});
+
 const quickViewStatusBadges = computed(() => {
   const badges: Array<{ key: string; icon: any; label?: string; highlight?: boolean }> = [];
   const rating = Number(props.file?.rating || 0);
@@ -433,6 +502,10 @@ const quickViewStatusBadges = computed(() => {
   }
 
   return badges;
+});
+
+const showStatusBadges = computed(() => {
+  return props.mode === 0 || props.mode === 2;
 });
 let resizeObserver: ResizeObserver | null = null;
 

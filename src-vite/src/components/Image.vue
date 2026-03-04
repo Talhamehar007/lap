@@ -45,21 +45,7 @@
           ref="activeImageEl"
           :src="src"
           :class="isGrabbing ? (isDraggingImage ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-pointer'"
-          :style="{
-            position: 'absolute',
-            minWidth: `${imageSize[index].width}px`,
-            minHeight: `${imageSize[index].height}px`,
-            transform: `translate3d(${position[index].x}px, ${position[index].y}px, 0) 
-                        scale(${scale[index]}) 
-                        rotate(${imageRotate[index] + (uiStore.activeAdjustments.filePath === props.filePath ? uiStore.activeAdjustments.rotate : 0)}deg)
-                        scaleX(${uiStore.activeAdjustments.filePath === props.filePath && uiStore.activeAdjustments.flipX ? -1 : 1})
-                        scaleY(${uiStore.activeAdjustments.filePath === props.filePath && uiStore.activeAdjustments.flipY ? -1 : 1})`,
-            transition: !isDraggingImage && !noTransition && !isWheelZooming ? (isDraggingNavBox ? 'transform 0.2s ease-out' : 'transform 0.3s ease-in-out') : 'none',
-            willChange: 'transform',
-            backfaceVisibility: 'hidden',
-            pointerEvents: 'auto',
-            filter: adjustmentStyle(src)
-          }"
+          :style="getImageStyle(index)"
           draggable="false"
           @mousedown="handleImageMouseDown"
           @mousemove="handleImageMouseMove"
@@ -210,6 +196,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  slideShowTransitionMode: {
+    type: Number,
+    default: 0,
+  },
   fileId: {
     type: Number,
     required: false,
@@ -273,12 +263,40 @@ let isTouchpadDevice = false;
 
 // Swipe state
 const navDirection = ref<'next' | 'prev' | ''>('');
+const isSliding = computed(() => {
+  if (props.isSlideShow) {
+    return props.slideShowTransitionMode === 0;
+  }
+  return navDirection.value !== '';
+});
 const transitionName = computed(() => {
-  if (props.isSlideShow) return 'slide-next';
+  if (props.isSlideShow) {
+    if (props.slideShowTransitionMode === 1) return 'slideshow-fade';
+    if (props.slideShowTransitionMode === 2) return '';
+    return 'slide-next';
+  }
   if (navDirection.value) {
     return navDirection.value === 'next' ? 'slide-next' : 'slide-prev';
   }
   return '';
+});
+
+const getImageStyle = (index: number) => ({
+  position: 'absolute',
+  minWidth: `${imageSize.value[index].width}px`,
+  minHeight: `${imageSize.value[index].height}px`,
+  transform: `translate3d(${position.value[index].x}px, ${position.value[index].y}px, 0)
+              scale(${scale.value[index]})
+              rotate(${imageRotate.value[index] + (uiStore.activeAdjustments.filePath === props.filePath ? uiStore.activeAdjustments.rotate : 0)}deg)
+              scaleX(${uiStore.activeAdjustments.filePath === props.filePath && uiStore.activeAdjustments.flipX ? -1 : 1})
+              scaleY(${uiStore.activeAdjustments.filePath === props.filePath && uiStore.activeAdjustments.flipY ? -1 : 1})`,
+  transition: !isSliding.value && !isDraggingImage.value && !noTransition.value && !isWheelZooming.value
+    ? (isDraggingNavBox.value ? 'transform 0.2s ease-out' : 'transform 0.3s ease-in-out')
+    : 'none',
+  willChange: 'transform',
+  backfaceVisibility: 'hidden',
+  pointerEvents: 'auto',
+  filter: adjustmentStyle.value(index === activeImage.value ? imageSrc.value[activeImage.value] : imageSrc.value[index]),
 });
 // loading and error overlays
 const isLoading = ref(false);
@@ -1458,21 +1476,54 @@ defineExpose({
 .slide-prev-enter-active,
 .slide-prev-leave-active {
   transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  contain: paint;
 }
 
 /* next: current leaves left, new enters from right */
 .slide-next-enter-from {
-  transform: translateX(100%);
+  transform: translate3d(100%, 0, 0);
 }
 .slide-next-leave-to {
-  transform: translateX(-100%);
+  transform: translate3d(-100%, 0, 0);
 }
 
 /* prev: current leaves right, new enters from left */
 .slide-prev-enter-from {
-  transform: translateX(-100%);
+  transform: translate3d(-100%, 0, 0);
 }
 .slide-prev-leave-to {
-  transform: translateX(100%);
+  transform: translate3d(100%, 0, 0);
+}
+
+.slide-next-enter-active,
+.slide-prev-enter-active {
+  z-index: 2;
+}
+
+.slide-next-leave-active,
+.slide-prev-leave-active {
+  z-index: 1;
+}
+
+.slideshow-fade-enter-active,
+.slideshow-fade-leave-active {
+  transition: opacity 0.35s ease;
+  will-change: opacity;
+}
+
+.slideshow-fade-enter-active {
+  z-index: 2;
+}
+
+.slideshow-fade-leave-active {
+  z-index: 1;
+}
+
+.slideshow-fade-enter-from,
+.slideshow-fade-leave-to {
+  opacity: 0;
 }
 </style>

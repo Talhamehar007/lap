@@ -3,7 +3,7 @@
     :title="$t('msgbox.manage_libraries.title')" 
     :width="600"
     :height="400"
-    @cancel="clickClose"
+    @cancel="clickCancel"
   >
     <!-- Library list -->
     <div class="flex flex-col flex-1 min-h-0 border border-base-content/10 bg-base-300/30 shadow-sm rounded-box overflow-hidden relative">
@@ -28,8 +28,8 @@
           class="flex items-center justify-between mx-1 px-1 h-12 rounded-box group transition-all duration-200 ease-in-out"
           :class="[
             selectedLibraryId === lib.id
-              ? 'bg-base-100 hover:bg-base-100 selected-item'
-              : 'hover:bg-base-100/30',
+              ? 'text-base-content bg-base-100 hover:bg-base-100 selected-item'
+              : 'text-base-content/70 hover:bg-base-100/30',
             showAddInput || (isRenaming && editingId !== lib.id) ? 'opacity-50' : 'cursor-pointer',
           ]"
           @click="selectLibrary(lib)"
@@ -164,10 +164,10 @@
       </div>
 
       <button
-        class="mt-2 px-4 py-1 rounded-box hover:bg-primary hover:text-base-content cursor-pointer shrink-0"
-        @click="clickClose"
+        class="px-4 py-1 rounded-box text-base-content/70 hover:bg-primary hover:text-base-100 cursor-pointer shrink-0"
+        @click="clickOk"
       >
-        {{ $t('msgbox.close') }}
+        {{ $t('msgbox.ok') }}
       </button>
     </div>
 
@@ -294,7 +294,7 @@ const onKeyDown = (e: KeyboardEvent) => {
   if (e.key === 'Escape') {
     // Close dialog if not in a sub-state (add input, edit input, or delete confirm)
     if (!showAddInput.value && !editingId.value && !showDeleteConfirm.value) {
-      clickClose();
+      clickCancel();
     }
   }
 };
@@ -494,16 +494,21 @@ const doDeleteLibrary = async () => {
   }
 };
 
-const clickClose = async () => {
+const clickOk = async () => {
   if (selectedLibraryId.value && selectedLibraryId.value !== currentLibraryId.value) {
     try {
       await switchLibrary(selectedLibraryId.value);
       emit('ok', { type: 'switch', id: selectedLibraryId.value });
+      return;
     } catch (error) {
       console.error(error);
       return;
     }
   }
+  emit('cancel');
+};
+
+const clickCancel = () => {
   emit('cancel');
 };
 

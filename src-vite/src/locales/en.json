@@ -812,6 +812,12 @@
         "Zoom in / out"
       ],
       "slide_show_interval": "Slide show interval: {second} second(s)",
+      "slide_show_transition": "Slide show transition",
+      "slide_show_transition_options": [
+        "Slide",
+        "Fade",
+        "None"
+      ],
       "auto_play_video": "Auto play video",
       "show_comment": "Show comment ",
       "show_comment_hint": "When view in new window, show image comment",

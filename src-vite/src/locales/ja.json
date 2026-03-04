@@ -806,6 +806,12 @@
         "拡大/縮小"
       ],
       "slide_show_interval": "間隔: {second} 秒",
+      "slide_show_transition": "スライドショーの切り替え",
+      "slide_show_transition_options": [
+        "スライド",
+        "フェード",
+        "なし"
+      ],
       "auto_play_video": "動画自動再生",
       "show_comment": "コメントを表示",
       "show_comment_hint": "新しいウィンドウで表示時",
