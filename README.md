@@ -1,7 +1,7 @@
 <div align="center">
   <img src="docs/public/icon.png" alt="Lap Logo" width="120" style="border-radius: 20px">
-  <h1>Lap</h1>
-  <h3>Private photo manager for family albums and local memories.</h3>
+  <h1>Lap - Private Local Photo Manager</h1>
+  <h3>Open-source desktop photo manager for macOS, Windows, and Linux.</h3>
   <p>
     <a href="https://github.com/julyx10/lap/releases"><img src="https://img.shields.io/github/v/release/julyx10/lap" alt="GitHub release"></a>
     <a href="https://github.com/julyx10/lap/releases"><img src="https://img.shields.io/github/downloads/julyx10/lap/total" alt="GitHub all releases"></a>
@@ -10,12 +10,11 @@
   </p>
 </div>
 
-Lap is a desktop photo manager for people who want an easier way to browse family albums, find old photos, and revisit meaningful moments from a growing local library.
-It helps you organize and explore your collection in practical ways, while keeping a simple promise: no cloud upload, private by default, and free to use.
+Lap is an open-source desktop photo manager and local photo organizer for people who want to browse family albums, find old photos quickly, and manage large personal media libraries offline.
+It is built as a privacy-focused alternative to cloud photo services: no forced upload, local AI photo search, folder-first workflow, and free to use.
 
 - Website: [https://julyx10.github.io/lap/](https://julyx10.github.io/lap/)
-- Demo video: [https://youtu.be/niMD1tTzS24](https://youtu.be/niMD1tTzS24)
-- Releases: [https://github.com/julyx10/lap/releases](https://github.com/julyx10/lap/releases)
+- Demo: [https://youtu.be/RbKqNKhbVUs](https://youtu.be/RbKqNKhbVUs)
 - Privacy: [PRIVACY.md](PRIVACY.md)
 
 ## Why Lap
@@ -28,14 +27,14 @@ It helps you organize and explore your collection in practical ways, while keepi
 
 ## Features
 
-- **Browse and filter** by date, location, camera, tags, favorites, ratings, and faces.
+- **Browse and filter** by date, location, camera, tags, favorites, ratings, and faces(BETA).
 - **Manage multiple libraries** and switch between them quickly.
 - **Find duplicates** and batch move unwanted copies to trash.
 - **Edit in place** with crop, rotate, flip, resize, and basic adjustments.
 - **Keep folders in sync** with filesystem-aware operations and refresh support.
 - **Use local search tools** such as text/image search, similar-image search, face clustering, and smart tags.
 
-## Download
+## Download Lap
 
 | Platform | Download | Notes |
 | :-- | :-- | :-- |
@@ -44,14 +43,14 @@ It helps you organize and explore your collection in practical ways, while keepi
 | **Linux (Ubuntu/Debian)** | [Download .deb (amd64)](https://github.com/julyx10/lap/releases/latest) | Community testing welcome |
 | **Windows (x64)** | [Download .msi](https://github.com/julyx10/lap/releases/latest) | Tested on Windows 11 |
 
-## Product Snapshot
+## Screenshots
 
 <p align="center">
-  <img src="docs/public/screenshots/lap-home3.png" alt="Lap Library" width="900">
+  <img src="docs/public/screenshots/lap-home3.png" alt="Lap local photo library manager screenshot" width="900">
 </p>
 
 <p align="center">
-  <img src="docs/public/screenshots/lap-search.png" alt="Lap AI Search" width="900">
+  <img src="docs/public/screenshots/lap-search.png" alt="Lap local AI photo search screenshot" width="900">
 </p>
 
 > Screenshot sample images come from [Wikimedia Commons](https://commons.wikimedia.org/).
@@ -82,8 +81,8 @@ cargo tauri dev
 
 | Type | Formats |
 | :--- | :--- |
-| Images | JPG, PNG, GIF, BMP, TIFF, WebP, HEIC |
-| Videos | MP4, MOV, MKV, WebM, AVI |
+| Images | JPG, PNG, GIF, BMP, TIFF, WebP, HEIC(macOS) |
+| Videos | MP4, MOV, MKV, WebM |
 
 ## Architecture
 
