@@ -20,24 +20,24 @@ hero:
       link: https://github.com/julyx10/lap
 
 features:
-  - title: 100% Private
-    details: Stop trading privacy for convenience. Runs entirely offline. Your photos never leave your device.
+  - title: No Cloud Required
+    details: Keep your photos on your own disk. Lap is a local-first photo manager with no forced cloud upload.
+    icon: ☁️
+  - title: Private by Default
+    details: Browsing, indexing, and search run locally on your device so your family albums stay under your control.
     icon: 🔒
-  - title: High Performance
-    details: Built with Rust and Tauri. Designed to handle libraries with 100,000+ assets with ease.
-    icon: ⚡
-  - title: Smart Local AI
-    details: Search by content, recognize faces, and find similar shots—all processed 100% locally.
-    icon: 🧠
-  - title: Direct Folder Management
-    details: No proprietary databases. Just add a folder to manage files directly in Lap. External changes like renaming sync easily.
+  - title: Folder-First Workflow
+    details: Use your existing folders directly. No import lock-in, no proprietary library migration.
     icon: 📂
-  - title: Multi-Platform
-    details: Native on macOS (Apple Silicon & Intel), Linux, and Windows.
-    icon: 🖥️
-  - title: Open Source
-    details: Community-driven and transparent source code.
-    icon: 🤝
+  - title: Local AI Search
+    details: Find photos with text search, similar-image search, face clustering, and smart tags processed on-device.
+    icon: 🧠
+  - title: Built for Large Libraries
+    details: Smooth browsing and organization across thousands of photos and videos in real-world collections.
+    icon: ⚡
+  - title: Free to Use
+    details: No subscription plan or recurring fee. Install and manage your memories freely.
+    icon: 💸
 ---
 
 <script setup>
@@ -198,6 +198,7 @@ onMounted(() => {
 .close-btn:hover {
   transform: scale(1.1);
 }
+
 </style>
 
 <div v-if="isZoomed" class="lightbox-overlay" @click="isZoomed = false">
