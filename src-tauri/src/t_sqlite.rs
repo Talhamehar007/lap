@@ -15,8 +15,12 @@ use image::{GenericImageView, ImageFormat};
 use rusqlite::{Connection, OptionalExtension, Result, ToSql, params};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fs;
 use std::fs::File;
 use std::io::{BufReader, Cursor};
+use std::path::{Path, PathBuf};
+use std::time::Duration;
+use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::State;
 
 /// Face Bounding Box struct (matching JSON storage)
@@ -637,7 +641,17 @@ impl AFile {
                 .map_err(|e| format!("Error opening file: {}", e))
                 .map(|file| {
                     let mut bufreader = BufReader::new(&file);
-                    Reader::new().read_from_container(&mut bufreader).ok()
+                    // Catch unwind in case of corrupted EXIF panic
+                    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                        Reader::new().read_from_container(&mut bufreader).ok()
+                    }))
+                    .unwrap_or_else(|_| {
+                        eprintln!(
+                            "Panic caught while parsing EXIF for: {}",
+                            file_path
+                        );
+                        None
+                    })
                 })?;
 
             // Extracts EXIF orientation field.
@@ -1293,20 +1307,24 @@ impl AFile {
             let missing_thumb = !file.has_thumbnail.unwrap_or(false);
 
             if modified || missing_thumb {
-                if let Some(mut updated_file) = Self::update_file_info(file.id.unwrap(), file_path)?
-                {
-                    // If modified, delete old thumbnail and remove embeds data
-                    if modified {
-                        let _ = AThumb::delete(file.id.unwrap());
-                        // remove embeds data
-                        let conn = open_conn()?;
-                        let _ = conn.execute(
-                            "UPDATE afiles SET embeds = NULL WHERE id = ?1",
-                            params![file.id.unwrap()],
-                        );
-                        updated_file.has_embedding = Some(false);
+                if let Some(file_id) = file.id {
+                    if let Some(mut updated_file) = Self::update_file_info(file_id, file_path)? {
+                        // If modified, delete old thumbnail and remove embeds data
+                        if modified {
+                            let _ = AThumb::delete(file_id);
+                            // remove embeds data
+                            let conn = open_conn()?;
+                            let _ =
+                                conn.execute("UPDATE afiles SET embeds = NULL WHERE id = ?1", params![file_id]);
+                            updated_file.has_embedding = Some(false);
+                        }
+                        return Ok((updated_file, 2));
                     }
-                    return Ok((updated_file, 2));
+                } else {
+                    return Err(format!(
+                        "Existing DB record is missing file id, skipping '{}'",
+                        file_path
+                    ));
                 }
             }
             return Ok((file, 0));
@@ -1317,7 +1335,9 @@ impl AFile {
 
         // return the newly inserted file
         let new_file = Self::fetch(folder_id, file_path)?;
-        Ok((new_file.unwrap(), 1))
+        new_file
+            .map(|f| (f, 1))
+            .ok_or_else(|| format!("Inserted file missing from DB: {}", file_path))
     }
 
     /// get a file info from db by file_id
@@ -3038,6 +3058,15 @@ fn open_conn() -> Result<Connection, String> {
     let conn = Connection::open(&path)
         .map_err(|e| format!("Failed to open database connection: {}", e))?;
 
+    conn.busy_timeout(Duration::from_secs(5))
+        .map_err(|e| format!("Failed to set SQLite busy timeout: {}", e))?;
+
+    conn.query_row("PRAGMA journal_mode = WAL", [], |row| row.get::<_, String>(0))
+        .map_err(|e| format!("Failed to enable WAL mode: {}", e))?;
+
+    conn.execute("PRAGMA synchronous = NORMAL", [])
+        .map_err(|e| format!("Failed to set SQLite synchronous mode: {}", e))?;
+
     // Enable foreign key constraints
     conn.execute("PRAGMA foreign_keys = ON", [])
         .map_err(|e| format!("Failed to enable foreign keys: {}", e))?;
@@ -3047,6 +3076,18 @@ fn open_conn() -> Result<Connection, String> {
 
 /// create all tables if not exists
 pub fn create_db() -> Result<(), String> {
+    match create_db_internal() {
+        Ok(_) => Ok(()),
+        Err(err) => {
+            eprintln!("create_db failed: {}. Trying recovery...", err);
+            recover_current_db_file()?;
+            create_db_internal()
+                .map_err(|e| format!("Database recovery retry failed: {}", e))
+        }
+    }
+}
+
+fn create_db_internal() -> Result<(), String> {
     let conn = open_conn()?;
 
     // Run migrations
@@ -3431,4 +3472,74 @@ pub fn create_db() -> Result<(), String> {
     .map_err(|e| e.to_string())?;
 
     Ok(())
+}
+
+fn recover_current_db_file() -> Result<(), String> {
+    let db_path = t_config::get_current_db_path()
+        .map_err(|e| format!("Failed to get current db path during recovery: {}", e))?;
+    let db_path = PathBuf::from(db_path);
+
+    if !db_path.exists() {
+        // Nothing to quarantine, next create_db_internal will create a new DB.
+        return Ok(());
+    }
+
+    let stamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|e| format!("Failed to get timestamp for db recovery: {}", e))?
+        .as_secs();
+
+    let db_name = db_path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("library.db")
+        .to_string();
+
+    let backup_db = db_path.with_file_name(format!("{}.corrupt-{}", db_name, stamp));
+    move_or_copy(&db_path, &backup_db)?;
+
+    let wal_path = path_with_suffix(&db_path, "-wal");
+    if wal_path.exists() {
+        let backup_wal = path_with_suffix(&backup_db, "-wal");
+        let _ = move_or_copy(&wal_path, &backup_wal);
+    }
+
+    let shm_path = path_with_suffix(&db_path, "-shm");
+    if shm_path.exists() {
+        let backup_shm = path_with_suffix(&backup_db, "-shm");
+        let _ = move_or_copy(&shm_path, &backup_shm);
+    }
+
+    eprintln!(
+        "Database file quarantined for recovery: '{}' -> '{}'",
+        db_path.display(),
+        backup_db.display()
+    );
+
+    Ok(())
+}
+
+fn path_with_suffix(path: &Path, suffix: &str) -> PathBuf {
+    let s = format!("{}{}", path.to_string_lossy(), suffix);
+    PathBuf::from(s)
+}
+
+fn move_or_copy(src: &Path, dst: &Path) -> Result<(), String> {
+    match fs::rename(src, dst) {
+        Ok(_) => Ok(()),
+        Err(rename_err) => {
+            fs::copy(src, dst)
+                .map_err(|copy_err| {
+                    format!(
+                        "Failed to move '{}' to '{}' (rename: {}, copy: {})",
+                        src.display(),
+                        dst.display(),
+                        rename_err,
+                        copy_err
+                    )
+                })?;
+            fs::remove_file(src)
+                .map_err(|e| format!("Failed to remove source file '{}': {}", src.display(), e))
+        }
+    }
 }
