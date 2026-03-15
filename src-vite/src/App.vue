@@ -16,9 +16,7 @@ import { setTheme } from '@/common/utils';
 const libConfig = useLibraryStore();
 const isReady = ref(false);
 const config = useConfigStore();
-const UI_SCALE_STEP = 0.1;
-const UI_SCALE_MIN = 0.8;
-const UI_SCALE_MAX = 1.2;
+const SCALE_VALUES = [0.8, 0.9, 1, 1.1, 1.2];
 
 // Auto-save library state when any config changes
 watch(() => libConfig.$state, () => {
@@ -28,11 +26,11 @@ watch(() => libConfig.$state, () => {
 }, { deep: true });
 
 watch(
-  () => Number(config.settings.uiScale || 1),
+  () => Number(config.settings.scale || 1),
   (newScale) => {
     const win = getCurrentWebviewWindow();
     if (win.label === 'main') {
-      void applyMainWindowScale(newScale);
+      applyMainWindowScale(newScale);
     }
   }
 );
@@ -41,7 +39,7 @@ onMounted(async () => {
   const win = getCurrentWebviewWindow();
   if (win.label === 'main') {
     window.addEventListener('keydown', handleKeyDown, { capture: true });
-    void applyMainWindowScale(Number(config.settings.uiScale || 1));
+    applyMainWindowScale(Number(config.settings.scale || 1));
     if (import.meta.env.PROD) {
       window.addEventListener('contextmenu', handleContextMenu);
     }
@@ -69,6 +67,7 @@ onUnmounted(async () => {
   const win = getCurrentWebviewWindow();
   if (win.label === 'main') {
     window.removeEventListener('keydown', handleKeyDown, { capture: true });
+    document.documentElement.style.fontSize = '';
     if (import.meta.env.PROD) {
       window.removeEventListener('contextmenu', handleContextMenu);
     }
@@ -76,7 +75,7 @@ onUnmounted(async () => {
 });
 
 const handleKeyDown = (event) => {
-  if (handleMainWindowZoomShortcut(event)) {
+  if (handleMainWindowScaleShortcut(event)) {
     return;
   }
 
@@ -89,16 +88,16 @@ const handleKeyDown = (event) => {
   });
 };
 
-function clampScale(value) {
-  return Math.max(UI_SCALE_MIN, Math.min(UI_SCALE_MAX, Number(value.toFixed(2))));
+function normalizeScale(value) {
+  return SCALE_VALUES.find((item) => item === Number(value)) ?? 1;
 }
 
 function applyMainWindowScale(scale) {
-  const clampedScale = clampScale(scale);
-  document.documentElement.style.zoom = String(clampedScale);
+  const normalizedScale = normalizeScale(scale);
+  document.documentElement.style.fontSize = `${normalizedScale * 16}px`;
 }
 
-function handleMainWindowZoomShortcut(event) {
+function handleMainWindowScaleShortcut(event) {
   const win = getCurrentWebviewWindow();
   if (win.label !== 'main') return false;
 
@@ -107,28 +106,31 @@ function handleMainWindowZoomShortcut(event) {
 
   const key = event.key;
   const code = event.code;
-  const isZoomIn = key === '+' || key === '=' || code === 'NumpadAdd';
-  const isZoomOut = key === '-' || key === '_' || code === 'NumpadSubtract';
-  const isZoomReset = key === '0' || code === 'Numpad0';
+  const isScaleUp = key === '+' || key === '=' || code === 'NumpadAdd';
+  const isScaleDown = key === '-' || key === '_' || code === 'NumpadSubtract';
+  const isScaleReset = key === '0' || code === 'Numpad0';
 
-  if (!isZoomIn && !isZoomOut && !isZoomReset) return false;
+  if (!isScaleUp && !isScaleDown && !isScaleReset) return false;
 
   event.preventDefault();
   event.stopPropagation();
 
-  let nextScale = Number(config.settings.uiScale || 1);
-  if (isZoomIn) {
-    nextScale = clampScale(nextScale + UI_SCALE_STEP);
-  } else if (isZoomOut) {
-    nextScale = clampScale(nextScale - UI_SCALE_STEP);
-  } else {
+  const currentScale = normalizeScale(config.settings.scale || 1);
+  const currentIndex = SCALE_VALUES.indexOf(currentScale);
+  let nextScale = currentScale;
+
+  if (isScaleReset) {
     nextScale = 1;
+  } else if (isScaleUp) {
+    nextScale = SCALE_VALUES[Math.min(currentIndex + 1, SCALE_VALUES.length - 1)];
+  } else if (isScaleDown) {
+    nextScale = SCALE_VALUES[Math.max(currentIndex - 1, 0)];
   }
 
-  if (nextScale !== Number(config.settings.uiScale || 1)) {
-    config.setUiScale(nextScale);
+  if (nextScale !== currentScale) {
+    config.setScale(nextScale);
   }
-  void applyMainWindowScale(nextScale);
+  applyMainWindowScale(nextScale);
   return true;
 }
 

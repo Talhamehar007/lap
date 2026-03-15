@@ -628,8 +628,6 @@
     "metadata": "メタデータ",
     "location": "場所",
     "map": "地図",
-    "map_expand": "地図を最大化",
-    "map_restore": "地図を元に戻す",
     "album_name": "アルバム",
     "name": "ファイル名",
     "folder": "フォルダー",
@@ -779,17 +777,17 @@
         "アビス"
       ],
       "select_language": "言語",
+      "font_size": "文字サイズ",
+      "font_size_options": [
+        "小さめ",
+        "小",
+        "標準",
+        "大",
+        "大きめ"
+      ],
       "show_button_text": "ボタンテキスト",
       "show_tool_tip": "ツールチップ",
       "show_status_bar": "ステータスバー",
-      "interface_scale": "インターフェースの拡大率",
-      "interface_scale_options": [
-        "80%（小）",
-        "90%",
-        "100%（既定）",
-        "110%",
-        "120%（大）"
-      ],
       "show_map": "地図を表示",
       "show_map_hint": "インターネット接続が必要です",
       "debug_mode": "デバッグモード"

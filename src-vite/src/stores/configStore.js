@@ -79,11 +79,11 @@ export const useConfigStore = defineStore('configStore', {
       appearance: 1,              // appearance (0: light; 1: dark)
       lightTheme: 0,              // light theme color index
       darkTheme: 0,               // dark theme color index
+      scale: 1,                   // root font-size scale
       showButtonText: true,       // show button text
       showToolTip: true,          // show button tooltip
       showStatusBar: true,        // show status bar
       debugMode: false,           // debug mode
-      uiScale: 1,                 // main window UI zoom scale (0.7-1.8)
 
       // grid view settings
       thumbnailSize: 512,         // thumbnail image size (small: 128, medium: 256, large: 512, extra large: 1024)
@@ -142,6 +142,9 @@ export const useConfigStore = defineStore('configStore', {
     setDarkTheme(darkTheme) {
       this.settings.darkTheme = darkTheme;
     },
+    setScale(scale) {
+      this.settings.scale = scale;
+    },
     setLanguage(language) {
       this.settings.language = language;
     },
@@ -156,9 +159,6 @@ export const useConfigStore = defineStore('configStore', {
     },
     setDebugMode(debugMode) {
       this.settings.debugMode = debugMode;
-    },
-    setUiScale(uiScale) {
-      this.settings.uiScale = uiScale;
     },
     setSettingsTabIndex(tabIndex) {
       this.settings.tabIndex = tabIndex;

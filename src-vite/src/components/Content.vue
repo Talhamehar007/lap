@@ -843,8 +843,7 @@ const RIGHT_PANEL_MIN_WIDTH = 160; // Keep aligned with left panel minimum width
 const activeRightPanelWidth = computed(() => Number(config.rightPanel.width || 360));
 
 function getRightPanelMaxWidth() {
-  const uiScale = Number(config.settings.uiScale || 1) || 1;
-  const mainWindowWidth = window.innerWidth / uiScale;
+  const mainWindowWidth = window.innerWidth;
   return Math.max(RIGHT_PANEL_MIN_WIDTH, Math.floor(mainWindowWidth / 3));
 }
 
@@ -4238,8 +4237,7 @@ function startDraggingInfoPanelSplitter(event: MouseEvent) {
 /// handle mouse move event
 function handleMouseMove(event: MouseEvent) {
   if (isDraggingInfoPanel.value) {
-    const uiScale = Number(config.settings.uiScale || 1) || 1;
-    const deltaX = (rightPanelDragStartX.value - event.clientX) / uiScale;
+    const deltaX = rightPanelDragStartX.value - event.clientX;
     const newWidth = rightPanelDragStartWidth.value + deltaX;
     config.rightPanel.width = clampRightPanelWidth(newWidth);
   }

@@ -628,8 +628,6 @@
     "metadata": "메타데이터",
     "location": "위치",
     "map": "지도",
-    "map_expand": "지도 최대화",
-    "map_restore": "지도 복원",
     "album_name": "앨범",
     "name": "이름",
     "folder": "폴더",
@@ -779,17 +777,17 @@
         "심해"
       ],
       "select_language": "언어",
+      "font_size": "글꼴 크기",
+      "font_size_options": [
+        "더 작게",
+        "작게",
+        "기본",
+        "크게",
+        "더 크게"
+      ],
       "show_button_text": "버튼 텍스트 표시",
       "show_tool_tip": "툴팁 표시",
       "show_status_bar": "상태 표시줄",
-      "interface_scale": "인터페이스 크기",
-      "interface_scale_options": [
-        "80% (작게)",
-        "90%",
-        "100% (기본)",
-        "110%",
-        "120% (크게)"
-      ],
       "show_map": "지도 표시",
       "show_map_hint": "인터넷 필요",
       "debug_mode": "디버그 모드"

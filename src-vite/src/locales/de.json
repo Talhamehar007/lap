@@ -628,8 +628,6 @@
     "metadata": "Metadaten",
     "location": "Ort",
     "map": "Karte",
-    "map_expand": "Karte maximieren",
-    "map_restore": "Karte wiederherstellen",
     "album_name": "Album",
     "name": "Name",
     "folder": "Ordner",
@@ -779,17 +777,17 @@
         "Abyss"
       ],
       "select_language": "Sprache",
+      "font_size": "Schriftgröße",
+      "font_size_options": [
+        "Kleiner",
+        "Klein",
+        "Standard",
+        "Groß",
+        "Größer"
+      ],
       "show_button_text": "Button-Text",
       "show_tool_tip": "Tooltips",
       "show_status_bar": "Statusleiste",
-      "interface_scale": "Oberflächenskalierung",
-      "interface_scale_options": [
-        "80% (Kleiner)",
-        "90%",
-        "100% (Standard)",
-        "110%",
-        "120% (Größer)"
-      ],
       "show_map": "Karte anzeigen",
       "show_map_hint": "Benötigt Internet",
       "debug_mode": "Debug-Modus"

@@ -287,13 +287,6 @@
           <IconLocation class="w-4 h-4 " /> 
           <span class="font-bold mr-auto uppercase text-xs tracking-wide">{{ $t('file_info.map') }}</span>
           <TButton
-            v-if="showMapPanel"
-            :icon="isMapExpanded ? IconMapSizeRestore : IconMapSizeExpand"
-            :tooltip="isMapExpanded ? $t('file_info.map_restore') : $t('file_info.map_expand')"
-            :buttonSize="'small'"
-            @click.stop="toggleMapExpand"
-          />
-          <TButton
             :icon="showMapPanel ? IconArrowUp : IconArrowDown"
             :buttonSize="'small'"
           />
@@ -346,7 +339,6 @@ import {
 import { 
   IconClose, IconLocation, IconArrowDown, IconArrowUp, IconCameraAperture, 
   IconFile, IconFolderSearch, IconHeart, IconHeartFilled, IconStar, IconStarFilled, IconEdit,
-  IconMapSizeExpand, IconMapSizeRestore,
   IconFolderExpanded,
   IconRotate,
 } from '@/common/icons';
@@ -378,29 +370,13 @@ const emit = defineEmits([
 ]);
 
 const toolTipRef = ref<InstanceType<typeof ToolTip> | null>(null);
-const isMapExpanded = ref(false);
-const showBasicInfoPanel = computed(() => !isMapExpanded.value && config.infoPanel.showBasicInfo);
-const showMetadataPanel = computed(() => !isMapExpanded.value && config.infoPanel.showMetadata);
-const showMapPanel = computed(() => isMapExpanded.value || config.infoPanel.showMap);
+const showBasicInfoPanel = computed(() => config.infoPanel.showBasicInfo);
+const showMetadataPanel = computed(() => config.infoPanel.showMetadata);
+const showMapPanel = computed(() => config.infoPanel.showMap);
 const normalizedRotate = computed(() => {
   const rotate = Number(props.fileInfo?.rotate || 0) % 360;
   return rotate < 0 ? rotate + 360 : rotate;
 });
-
-function toggleMapExpand() {
-  if (!isMapExpanded.value) {
-    config.infoPanel.showBasicInfo = false;
-    config.infoPanel.showMetadata = false;
-    config.infoPanel.showMap = true;
-    isMapExpanded.value = true;
-    return;
-  }
-
-  config.infoPanel.showBasicInfo = true;
-  config.infoPanel.showMetadata = true;
-  config.infoPanel.showMap = true;
-  isMapExpanded.value = false;
-}
 
 function toggleBasicInfo() {
   config.infoPanel.showBasicInfo = !config.infoPanel.showBasicInfo;
@@ -411,9 +387,6 @@ function toggleMetadata() {
 }
 
 function toggleMapPanel() {
-  if (isMapExpanded.value) {
-    isMapExpanded.value = false;
-  }
   config.infoPanel.showMap = !config.infoPanel.showMap;
 }
 

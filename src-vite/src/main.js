@@ -68,6 +68,9 @@ listen('settings-lightTheme-changed', (event) => {
 listen('settings-darkTheme-changed', (event) => {
   config.setDarkTheme(event.payload)
 })
+listen('settings-scale-changed', (event) => {
+  config.setScale(event.payload)
+})
 listen('settings-language-changed', (event) => {
   config.setLanguage(event.payload)
 })
@@ -79,9 +82,6 @@ listen('settings-showToolTip-changed', (event) => {
 })
 listen('settings-showStatusBar-changed', (event) => {
   config.setShowStatusBar(event.payload)
-})
-listen('settings-uiScale-changed', (event) => {
-  config.setUiScale(event.payload)
 })
 listen('settings-debugMode-changed', (event) => {
   config.setDebugMode(event.payload)

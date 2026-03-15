@@ -628,8 +628,6 @@
     "metadata": "元数据",
     "location": "地点",
     "map": "地图",
-    "map_expand": "最大化地图",
-    "map_restore": "还原地图",
     "album_name": "相册",
     "name": "文件名",
     "folder": "文件夹",
@@ -779,17 +777,17 @@
         "深渊"
       ],
       "select_language": "选择语言",
+      "font_size": "字体大小",
+      "font_size_options": [
+        "更小",
+        "小",
+        "默认",
+        "大",
+        "更大"
+      ],
       "show_button_text": "显示按钮文本",
       "show_tool_tip": "显示工具提示",
       "show_status_bar": "显示状态栏",
-      "interface_scale": "界面缩放",
-      "interface_scale_options": [
-        "80%（更小）",
-        "90%",
-        "100%（默认）",
-        "110%",
-        "120%（更大）"
-      ],
       "show_map": "显示地图",
       "show_map_hint": "需要网络访问",
       "debug_mode": "调试模式"

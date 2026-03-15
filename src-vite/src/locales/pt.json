@@ -628,8 +628,6 @@
     "metadata": "Metadados",
     "location": "Localização",
     "map": "Mapa",
-    "map_expand": "Maximizar mapa",
-    "map_restore": "Restaurar mapa",
     "album_name": "Álbum",
     "name": "Nome",
     "folder": "Pasta",
@@ -779,17 +777,17 @@
         "Abyss"
       ],
       "select_language": "Idioma",
+      "font_size": "Tamanho da fonte",
+      "font_size_options": [
+        "Menor",
+        "Pequena",
+        "Padrão",
+        "Grande",
+        "Maior"
+      ],
       "show_button_text": "Texto nos botões",
       "show_tool_tip": "Dicas de ferramenta",
       "show_status_bar": "Barra de status",
-      "interface_scale": "Escala da interface",
-      "interface_scale_options": [
-        "80% (Menor)",
-        "90%",
-        "100% (Padrão)",
-        "110%",
-        "120% (Maior)"
-      ],
       "show_map": "Mostrar mapa",
       "show_map_hint": "Requer internet",
       "debug_mode": "Modo debug"

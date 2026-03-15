@@ -981,12 +981,22 @@ function handleKeyDown(event: KeyboardEvent) {
       event.preventDefault();
       event.stopPropagation();
       break;
+    case ' ':
+      if (cropStatus.value === 1) {
+        toggleCropBoxFixed();
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      break;
     default:
       break;
   }
 }
 
 const clickCancel = () => {
+  if (uiStore.activeAdjustments.filePath === props.fileInfo.file_path) {
+    uiStore.clearActiveAdjustments();
+  }
   emit('cancel');
 };
 
@@ -1038,6 +1048,9 @@ const executeSave = async (overrides: { fileName?: string; destFilePath?: string
     isProcessing.value = false;
     if (success) {
       uiStore.updateFileVersion(props.fileInfo.file_path);
+      if (uiStore.activeAdjustments.filePath === props.fileInfo.file_path) {
+        uiStore.clearActiveAdjustments();
+      }
       emit('success', { saveAsNew, filePath: savedFilePath });
     } else {
       emit('failed');

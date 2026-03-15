@@ -54,13 +54,13 @@
                 <option v-for="(option, index) in themeOptions" :key="index" :value="option.value">{{ option.label }}</option>
               </select>
             </div>
-            <!-- Interface Scale -->
+            <!-- Font Size -->
             <div class="flex items-center justify-between p-2 rounded-box hover:bg-base-100/10 transition-colors duration-200">
               <div class="flex flex-col gap-0.5">
-                <div>{{ $t('settings.general.interface_scale') }}</div>
+                <div>{{ $t('settings.general.font_size') }}</div>
               </div>
-              <select class="select select-bordered select-sm min-w-32" v-model="config.settings.uiScale">
-                <option v-for="(option, index) in uiScaleOptions" :key="index" :value="option.value">{{ option.label }}</option>
+              <select class="select select-bordered select-sm min-w-32" v-model="config.settings.scale">
+                <option v-for="(option, index) in scaleOptions" :key="index" :value="option.value">{{ option.label }}</option>
               </select>
             </div>
             <!-- Show Button Text -->
@@ -313,12 +313,12 @@ const currentTheme = computed({
   }
 });
 
-const uiScaleOptions = computed(() => {
-  const options = localeMsg.value.settings.general.interface_scale_options;
+const scaleOptions = computed(() => {
+  const options = localeMsg.value.settings.general.font_size_options;
   const values = [0.8, 0.9, 1, 1.1, 1.2];
   return values.map((value, index) => ({
     value,
-    label: options[index] ?? `${Math.round(value * 100)}%`,
+    label: options[index] ?? String(value),
   }));
 });
 
@@ -457,6 +457,9 @@ watch(() => config.settings.darkTheme, (newValue) => {
   setTheme(config.settings.appearance, newValue);
   emit('settings-darkTheme-changed', newValue);
 });
+watch(() => config.settings.scale, (newValue) => {
+  emit('settings-scale-changed', newValue);
+});
 watch(() => config.settings.language, (newValue) => {
   locale.value = newValue;
   emit('settings-language-changed', newValue);
@@ -469,9 +472,6 @@ watch(() => config.settings.showToolTip, (newValue) => {
 });
 watch(() => config.settings.showStatusBar, (newValue) => {
   emit('settings-showStatusBar-changed', newValue);
-});
-watch(() => config.settings.uiScale, (newValue) => {
-  emit('settings-uiScale-changed', newValue);
 });
 watch(() => config.settings.showComment, (newValue) => {
   emit('settings-showComment-changed', newValue);

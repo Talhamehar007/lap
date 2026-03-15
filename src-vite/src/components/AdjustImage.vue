@@ -675,6 +675,9 @@ function handleKeyDown(event: KeyboardEvent) {
 }
 
 const clickCancel = () => {
+  if (uiStore.activeAdjustments.filePath === props.fileInfo.file_path) {
+    uiStore.clearActiveAdjustments();
+  }
   emit('cancel');
 };
 
