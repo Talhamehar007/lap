@@ -29,6 +29,8 @@ export const useConfigStore = defineStore('configStore', {
     },
 
     infoPanel: {
+      showPreview: true,         // show preview thumbnail
+      previewScale: 1,           // preview thumbnail scale (1, 0.5, 0.25)
       showBasicInfo: true,       // show basic info
       showMetadata: true,        // show metadata
       showMap: true,             // show map
@@ -60,6 +62,15 @@ export const useConfigStore = defineStore('configStore', {
     },
 
     imageEditor: {
+      tab: 'edit',               // image editor active tab ('edit' | 'adjust')
+      custom: {
+        brightness: 0,
+        contrast: 0,
+        saturation: 100,
+        hue: 0,
+        blur: 0,
+        filter: '',
+      },
       cropShape: 0,             // image editor crop shape (0: Custom, 1: 1:1, 2: 1:2, 3: 2:3, 4: 3:4, 5: 9:16) 
       saveAs: 0,                // image editor save as (0: Overwrite existing file, 1: Save as new file)
       format: 0,                // image editor format (0: JPEG, 1: PNG, 2: WEBP)
@@ -105,6 +116,8 @@ export const useConfigStore = defineStore('configStore', {
       navigatorViewSize: 240,    // navigator view size (160, 240, 320, 400)
       autoPlayVideo: true,       // auto play video
       showComment: true,         // show comment
+      externalImageEditorPath: '', // external image editor app path
+      externalVideoAppPath: '',    // external video app path
 
       // image search settings
       imageSearch: {
@@ -144,6 +157,12 @@ export const useConfigStore = defineStore('configStore', {
     },
     setScale(scale) {
       this.settings.scale = scale;
+    },
+    setExternalImageEditorPath(externalImageEditorPath) {
+      this.settings.externalImageEditorPath = externalImageEditorPath;
+    },
+    setExternalVideoAppPath(externalVideoAppPath) {
+      this.settings.externalVideoAppPath = externalVideoAppPath;
     },
     setLanguage(language) {
       this.settings.language = language;

@@ -326,7 +326,6 @@
       "view_in_new_window": "Ver em nova janela...",
       "copy": "Copiar para área de transferência",
       "edit_image": "Editar imagem...",
-      "adjust": "Ajustar...",
       "find_similar_images": "Encontrar semelhantes",
       "find_person_images": "Encontrar fotos de pessoa",
       "find_album_folder": "Encontrar pasta do álbum",
@@ -533,8 +532,8 @@
     },
     "image_editor": {
       "title": "Editor de imagem",
-      "adjust_title": "Ajustar imagem",
-      "tab_edit": "Ajustar",
+      "tab_edit": "Edit",
+      "tab_adjust": "Adjust",
       "histogram": "Histograma",
       "light": "Luz",
       "color": "Cor",
@@ -628,10 +627,13 @@
   },
   "file_info": {
     "title": "Info do arquivo",
+    "preview": "Miniatura",
+    "preview_size": "Tamanho da miniatura",
     "general": "Geral",
     "metadata": "Metadados",
     "location": "Localização",
     "map": "Mapa",
+    "open_apple_maps": "Abrir no Apple Mapas",
     "empty_title": "Nenhum arquivo selecionado",
     "empty_desc": "Selecione um arquivo para ver seus detalhes e metadados.",
     "album_name": "Álbum",
@@ -676,7 +678,9 @@
     "hide_map": "Ocultar mapa",
     "zoom_in": "Zoom in",
     "zoom_out": "Zoom out",
-    "zoom_center": "Centralizar"
+    "zoom_center": "Centralizar",
+    "standard": "Padrão",
+    "satellite": "Satélite"
   },
   "format": {
     "year": "yyyy",
@@ -791,6 +795,10 @@
         "Grande",
         "Maior"
       ],
+      "external_editor": "Editor externo",
+      "external_editor_not_selected": "Nenhum app selecionado",
+      "choose_app": "Escolher app",
+      "clear_app": "Limpar",
       "show_button_text": "Texto nos botões",
       "show_tool_tip": "Dicas de ferramenta",
       "show_status_bar": "Barra de status",
@@ -852,6 +860,11 @@
       "auto_play_video": "Auto reproduzir vídeo",
       "show_comment": "Mostrar comentário",
       "show_comment_hint": "Em nova janela",
+      "external_image_editor": "Editor de imagem externo",
+      "external_video_app": "App de vídeo externa",
+      "external_app_not_selected": "Nenhum app selecionado",
+      "choose_app": "Escolher app",
+      "clear_app": "Limpar",
       "navigator_view": "Visibilidade do navegador",
       "navigator_view_options": [
         "Auto",

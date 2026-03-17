@@ -196,6 +196,46 @@
               </div>
               <input type="checkbox" class="toggle toggle-primary toggle-sm" v-model="config.settings.showComment" />
             </div>
+            <div class="flex items-center justify-between gap-4 p-2 rounded-box hover:bg-base-100/10 transition-colors duration-200">
+              <div class="min-w-0 flex flex-col gap-0.5">
+                <div>{{ $t('settings.image_view.external_image_editor') }}</div>
+                <div class="text-xs text-base-content/30 truncate" :title="config.settings.externalImageEditorPath || ''">
+                  {{ externalImageEditorName }}
+                </div>
+              </div>
+              <div class="shrink-0 flex items-center gap-2">
+                <button class="btn btn-sm btn-ghost" @click="selectExternalApp('image')">
+                  {{ $t('settings.image_view.choose_app') }}
+                </button>
+                <button
+                  class="btn btn-sm btn-ghost"
+                  :disabled="!config.settings.externalImageEditorPath"
+                  @click="clearExternalApp('image')"
+                >
+                  {{ $t('settings.image_view.clear_app') }}
+                </button>
+              </div>
+            </div>
+            <div class="flex items-center justify-between gap-4 p-2 rounded-box hover:bg-base-100/10 transition-colors duration-200">
+              <div class="min-w-0 flex flex-col gap-0.5">
+                <div>{{ $t('settings.image_view.external_video_app') }}</div>
+                <div class="text-xs text-base-content/30 truncate" :title="config.settings.externalVideoAppPath || ''">
+                  {{ externalVideoAppName }}
+                </div>
+              </div>
+              <div class="shrink-0 flex items-center gap-2">
+                <button class="btn btn-sm btn-ghost" @click="selectExternalApp('video')">
+                  {{ $t('settings.image_view.choose_app') }}
+                </button>
+                <button
+                  class="btn btn-sm btn-ghost"
+                  :disabled="!config.settings.externalVideoAppPath"
+                  @click="clearExternalApp('video')"
+                >
+                  {{ $t('settings.image_view.clear_app') }}
+                </button>
+              </div>
+            </div>
           </div>
 
           <!-- Image Search Tab -->
@@ -256,10 +296,11 @@
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { emit } from '@tauri-apps/api/event';
+import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { debounce } from 'lodash';
 import { useI18n } from 'vue-i18n';
 import { config } from '@/common/config';
-import { setTheme, getSlideShowInterval } from '@/common/utils';
+import { isMac, setTheme, getSlideShowInterval } from '@/common/utils';
 
 import TitleBar from '@/components/TitleBar.vue';
 import SliderInput from '@/components/SliderInput.vue';
@@ -321,6 +362,22 @@ const scaleOptions = computed(() => {
     label: options[index] ?? String(value),
   }));
 });
+
+function formatExternalAppName(path: string) {
+  if (!path) return localeMsg.value.settings.image_view.external_app_not_selected;
+
+  const normalized = path.replace(/\\/g, '/');
+  const name = normalized.split('/').pop() || path;
+  return isMac && name.endsWith('.app') ? name.slice(0, -4) : name;
+}
+
+const externalImageEditorName = computed(() =>
+  formatExternalAppName(String(config.settings.externalImageEditorPath || ''))
+);
+
+const externalVideoAppName = computed(() =>
+  formatExternalAppName(String(config.settings.externalVideoAppPath || ''))
+);
 
 // Define the wheel options using computed to react to language changes
 // const wheelOptions = computed(() => {
@@ -460,6 +517,12 @@ watch(() => config.settings.darkTheme, (newValue) => {
 watch(() => config.settings.scale, (newValue) => {
   emit('settings-scale-changed', newValue);
 });
+watch(() => config.settings.externalImageEditorPath, (newValue) => {
+  emit('settings-externalImageEditorPath-changed', newValue);
+});
+watch(() => config.settings.externalVideoAppPath, (newValue) => {
+  emit('settings-externalVideoAppPath-changed', newValue);
+});
 watch(() => config.settings.language, (newValue) => {
   locale.value = newValue;
   emit('settings-language-changed', newValue);
@@ -550,6 +613,37 @@ function handleKeyDown(event: KeyboardEvent) {
     case 'Escape':
       appWindow.close(); // Close the window
       break;
+  }
+}
+
+async function selectExternalApp(kind: 'image' | 'video') {
+  const result = await openDialog({
+    title: kind === 'image'
+      ? localeMsg.value.settings.image_view.external_image_editor
+      : localeMsg.value.settings.image_view.external_video_app,
+    multiple: false,
+    directory: false,
+    ...(isMac
+      ? {
+          defaultPath: '/Applications',
+          filters: [{ name: 'Applications', extensions: ['app'] }],
+        }
+      : {}),
+  });
+
+  if (!result || Array.isArray(result)) return;
+  if (kind === 'image') {
+    config.settings.externalImageEditorPath = result;
+  } else {
+    config.settings.externalVideoAppPath = result;
+  }
+}
+
+function clearExternalApp(kind: 'image' | 'video') {
+  if (kind === 'image') {
+    config.settings.externalImageEditorPath = '';
+  } else {
+    config.settings.externalVideoAppPath = '';
   }
 }
 </script>

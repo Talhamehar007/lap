@@ -2,6 +2,8 @@
 
   <div class="relative flex-1 flex flex-col select-none"
     :class="{ 'opacity-50 pointer-events-none': uiStore.isInputActive('AlbumList-edit') }"
+    @mouseenter="isContentHovered = true"
+    @mouseleave="isContentHovered = false"
     @keydown="handleLocalKeyDown"
   >
 
@@ -438,18 +440,11 @@
   <!-- edit image -->
   <EditImage
     v-if="showEditImage"
-    :fileInfo="fileList[selectedItemIndex]" 
+    :fileInfo="fileList[selectedItemIndex]"
+    :initialTab="editImageInitialTab"
     @success="onFileSaved(true, $event)"
     @failed="onFileSaved(false)"
     @cancel="showEditImage = false"
-  />
-
-  <AdjustImage
-    v-if="showAdjustImage"
-    :fileInfo="fileList[selectedItemIndex]"
-    @success="onFileSaved(true, $event)"
-    @failed="onFileSaved(false)"
-    @cancel="showAdjustImage = false"
   />
 
   <!-- rename -->
@@ -574,7 +569,6 @@ import ToolTip from '@/components/ToolTip.vue';
 import TButton from '@/components/TButton.vue';
 import TaggingDialog from '@/components/TaggingDialog.vue';
 import EditImage from '@/components/EditImage.vue';
-import AdjustImage from '@/components/AdjustImage.vue';
 import FileInfo from '@/components/FileInfo.vue';
 import DedupPane from '@/components/DedupPane.vue';
 import SelectionPanel from '@/components/SelectionPanel.vue';
@@ -733,6 +727,7 @@ const showProgressBar = ref(false); // show progress bar
 // div elements
 const contentViewDiv = ref<HTMLDivElement | null>(null);
 const gridViewDiv = ref<HTMLDivElement | null>(null);
+const isContentHovered = ref(false);
 
 // file list
 const fileList = ref<any[]>([]);
@@ -812,7 +807,7 @@ const renamingFileName = ref<{name?: string, ext?: string}>({}); // extract the 
 
 const showMoveTo = ref(false);
 const showEditImage = ref(false);
-const showAdjustImage = ref(false);
+const editImageInitialTab = ref<'edit' | 'adjust'>('edit');
 const showCopyTo = ref(false);
 const showTrashMsgbox = ref(false);
 const dedupReclaimBytes = ref(0);
@@ -1249,8 +1244,10 @@ function handleItemAction(payload: { action: string, index: number }) {
 
   const actionMap = {
     'open': () => openImageViewer(selectedItemIndex.value, true),
-    'edit': () => showEditImage.value = true,
-    'adjust': () => showAdjustImage.value = true,
+    'edit': () => {
+      editImageInitialTab.value = config.imageEditor.tab === 'adjust' ? 'adjust' : 'edit';
+      showEditImage.value = true;
+    },
     'copy': () => clickCopyImage(fileList.value[selectedItemIndex.value].file_path),
     'rename': clickRename,
     'move-to': () => showMoveTo.value = true,
@@ -1548,12 +1545,14 @@ function handleLocalKeyDown(event: KeyboardEvent) {
     }
 
     if (!showQuickView.value && event.key === '=') {
+      if (!isContentInteractionActive()) return;
       event.preventDefault();
       config.settings.grid.size = Math.min(360, Number(config.settings.grid.size || 160) + 10);
       return;
     }
 
     if (!showQuickView.value && event.key === '-') {
+      if (!isContentInteractionActive()) return;
       event.preventDefault();
       config.settings.grid.size = Math.max(120, Number(config.settings.grid.size || 160) - 10);
       return;
@@ -1630,6 +1629,10 @@ function handleLocalKeyDown(event: KeyboardEvent) {
   }
 }
 
+function isContentInteractionActive() {
+  return isContentHovered.value && !uiStore.mapActive;
+}
+
 // Global keydown handler (from Tauri)
 const handleKeyDown = (e: any) => {
   if (uiStore.inputStack.length > 0) {
@@ -1652,6 +1655,7 @@ const handleKeyDown = (e: any) => {
   } else if (isCmdKey && key.toLowerCase() === 'f') {
     enterSimilarSearchMode(fileList.value[selectedItemIndex.value]);
   } else if (isCmdKey && key.toLowerCase() === 'e') {
+    editImageInitialTab.value = config.imageEditor.tab === 'adjust' ? 'adjust' : 'edit';
     showEditImage.value = true;
   } else if ((isMac && metaKey && key === 'Backspace') || (!isMac && key === 'Delete')) {
     openTrashMsgbox();
@@ -3283,7 +3287,6 @@ function handleTitleClick() {
 const onFileSaved = async (success: boolean, payload: SavedFilePayload = {}) => {
   if (success) {
     showEditImage.value = false;
-    showAdjustImage.value = false;
     if (payload.saveAsNew && payload.filePath) {
       const inserted = await indexAndInsertSavedFile(payload.filePath);
       if (!inserted) {

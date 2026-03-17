@@ -68,7 +68,11 @@
           <!-- panel-->
           <div v-if="showPanel" class="ml-16 pr-0.5 flex-1 flex flex-col overflow-hidden">
             <!-- library title -->
-            <div class="mb-2 p-1 h-10 flex items-center justify-between whitespace-nowrap shrink-0" data-tauri-drag-region>
+            <div 
+              class="mb-2 h-10 flex items-center justify-between whitespace-nowrap shrink-0"
+              :class="config.settings.scale < 1 ? 'p-3' : 'p-1'"
+              data-tauri-drag-regio
+            >
               
               <!-- Library dropdown selector -->
               <ContextMenu

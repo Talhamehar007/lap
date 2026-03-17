@@ -10,7 +10,31 @@
             </div>
           </transition>
 
-          <img ref="imageRef" :src="imageSrc" :style="imageStyle" draggable="false" @load="onImageLoad" />
+          <div
+            v-if="activeEditorTab === 'adjust'"
+            class="absolute top-2 right-2 z-40"
+            @pointerdown.stop="handleComparePointerDown"
+            @pointerup.stop="handleComparePointerUp"
+            @pointerleave.stop="handleComparePointerUp"
+            @pointercancel.stop="handleComparePointerUp"
+          >
+            <TButton
+              buttonSize="small"
+              :icon="IconInformation"
+              :selected="isComparingOriginal"
+              :disabled="!hasAdjustmentChanges"
+              :tooltip="$t('msgbox.image_editor.compare')"
+            />
+          </div>
+
+          <img
+            ref="imageRef"
+            :src="imageSrc"
+            :style="imageStyle"
+            class="block"
+            draggable="false"
+            @load="onImageLoad"
+          />
 
           <div v-if="cropStatus === 1 || cropApplied"
             :class="[
@@ -53,7 +77,32 @@
       </div>
 
       <div class="w-[268px] flex flex-col gap-3 overflow-y-auto">
+        <div class="border-b border-base-content/10 pb-2">
+          <div role="tablist" class="sidebar-header-tabs">
+            <button
+              role="tab"
+              :class="[
+                'sidebar-header-tab',
+                activeEditorTab === 'edit' ? 'tab-active' : '',
+                cropStatus === 1 ? 'opacity-50 cursor-default' : '',
+              ]"
+              :disabled="cropStatus === 1"
+              @click="setActiveEditorTab('edit')"
+            >{{ $t('msgbox.image_editor.tab_edit') }}</button>
+            <button
+              role="tab"
+              :class="[
+                'sidebar-header-tab',
+                activeEditorTab === 'adjust' ? 'tab-active' : '',
+                cropStatus === 1 ? 'opacity-50 cursor-default' : '',
+              ]"
+              :disabled="cropStatus === 1"
+              @click="setActiveEditorTab('adjust')"
+            >{{ $t('msgbox.image_editor.tab_adjust') }}</button>
+          </div>
+        </div>
 
+        <template v-if="activeEditorTab === 'edit'">
         <section class="rounded-box p-3 space-y-2 bg-base-300/30 border border-base-content/5 shadow-sm">
           <div class="flex items-center justify-between gap-2">
             <div class="text-[11px] font-bold uppercase tracking-[0.22em] text-base-content/35">{{ $t('msgbox.image_editor.transform') }}</div>
@@ -213,6 +262,123 @@
             <input type="checkbox" class="toggle toggle-primary toggle-sm shrink-0" v-model="keepAspectRatio" :disabled="cropStatus === 1" />
           </div>
         </section>
+        </template>
+
+        <template v-else>
+        <section class="rounded-box p-3 space-y-2 bg-base-300/30 border border-base-content/5 shadow-sm">
+          <div class="flex items-center justify-between gap-2">
+            <div class="text-[11px] font-bold uppercase tracking-[0.22em] text-base-content/35">{{ $t('msgbox.image_editor.histogram') }}</div>
+          </div>
+
+          <div class="relative w-full aspect-4/1 px-0.5">
+            <svg viewBox="0 0 256 64" class="w-full h-full text-primary" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="histGradientEdit" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="currentColor" stop-opacity="0.6" />
+                  <stop offset="100%" stop-color="currentColor" stop-opacity="0.1" />
+                </linearGradient>
+              </defs>
+              <g class="text-base-content/20">
+                <line x1="64" y1="0" x2="64" y2="64" stroke="currentColor" stroke-width="0.5" />
+                <line x1="128" y1="0" x2="128" y2="64" stroke="currentColor" stroke-width="0.5" />
+                <line x1="192" y1="0" x2="192" y2="64" stroke="currentColor" stroke-width="0.5" />
+              </g>
+              <path :d="generateHistogramPath()" fill="url(#histGradientEdit)" class="transition-all duration-300" />
+            </svg>
+          </div>
+
+          <div class="flex justify-between px-0.5 text-[8px] uppercase tracking-tighter font-black text-base-content/25">
+            <span>{{ $t('msgbox.image_editor.shadows') }}</span>
+            <span>{{ $t('msgbox.image_editor.midtones') }}</span>
+            <span>{{ $t('msgbox.image_editor.highlights') }}</span>
+          </div>
+        </section>
+
+        <section class="rounded-box p-3 space-y-2 border border-base-content/5 shadow-sm bg-base-300/30">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-[11px] font-bold uppercase tracking-[0.22em] text-base-content/35">{{ $t('msgbox.image_editor.presets.title') }}</span>
+            <TButton
+              buttonSize="small"
+              :icon="IconRestore"
+              :disabled="!hasAdjustmentChanges"
+              :tooltip="$t('msgbox.image_editor.reset')"
+              @click.stop="resetAdjustments"
+            />
+          </div>
+
+          <div ref="presetStripRef" class="flex gap-2 overflow-x-auto overflow-y-hidden flex-nowrap">
+            <div
+              v-for="option in presetOptions"
+              :key="option.value"
+              :data-preset="option.value"
+              class="shrink-0 w-[76px] group cursor-pointer"
+              @click="selectedPreset = option.value"
+            >
+              <div
+                :class="[
+                  'aspect-4/3 rounded-box border-2 transition-all duration-200 flex items-center justify-center overflow-hidden mb-1 relative',
+                  selectedPreset === option.value ? 'border-primary ring-2 ring-primary/20' : 'border-base-content/5 hover:border-base-content/20',
+                ]"
+              >
+                <div class="w-full h-full bg-base-300 flex items-center justify-center relative overflow-hidden rounded-[inherit] isolation-isolate">
+                  <img
+                    v-if="props.fileInfo.thumbnail"
+                    :src="props.fileInfo.thumbnail"
+                    class="w-full h-full object-cover pointer-events-none rounded-[inherit] block"
+                    :style="{ ...getPresetThumbnailStyle(option.value), transform: 'translateZ(0)' }"
+                  />
+                  <IconPalette v-else class="w-4 h-4 text-base-content/10" />
+                </div>
+              </div>
+              <div
+                :class="[
+                  'text-[9px] text-center truncate font-medium transition-colors uppercase tracking-tight',
+                  selectedPreset === option.value ? 'text-primary' : 'text-base-content/50 group-hover:text-base-content',
+                ]"
+              >
+                {{ option.label }}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="rounded-box p-3 space-y-2 border border-base-content/5 shadow-sm bg-base-300/30">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-[11px] font-bold uppercase tracking-[0.22em] text-base-content/35">{{ $t('msgbox.image_editor.adjustments') }}</span>
+            <TButton
+              buttonSize="small"
+              :icon="IconRestore"
+              :disabled="!hasAdjustmentChanges"
+              :tooltip="$t('msgbox.image_editor.reset')"
+              @click.stop="resetAdjustments"
+            />
+          </div>
+
+          <div class="space-y-4 overflow-hidden">
+            <div class="space-y-3">
+              <div v-for="adj in lightSliders" :key="adj.key" class="grid grid-cols-[80px_minmax(0,1fr)] gap-x-4 items-center">
+                <div class="font-medium text-base-content/40 tracking-wide text-xs">{{ adj.label }}</div>
+                <div class="flex items-center gap-2 pr-2 min-w-0">
+                  <SliderInput v-model="adj.model.value" :min="adj.min" :max="adj.max" :step="adj.step" class="flex-1 min-w-0 w-full" />
+                  <span class="text-[10px] font-mono text-base-content/60 w-8 text-right shrink-0">{{ adj.valueDisplay }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="h-px bg-base-content/5 mx-1"></div>
+
+            <div class="space-y-3">
+              <div v-for="adj in colorSliders" :key="adj.key" class="grid grid-cols-[80px_minmax(0,1fr)] gap-x-4 items-center">
+                <div class="font-medium text-base-content/40 tracking-wide text-xs">{{ adj.label }}</div>
+                <div class="flex items-center gap-2 pr-2 min-w-0">
+                  <SliderInput v-model="adj.model.value" :min="adj.min" :max="adj.max" :step="adj.step" class="flex-1 min-w-0 w-full" />
+                  <span class="text-[10px] font-mono text-base-content/60 w-8 text-right shrink-0">{{ adj.valueDisplay }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        </template>
 
         <section class="rounded-box p-3 space-y-3 bg-base-300/30 border border-base-content/5 shadow-sm">
           <div class="text-[11px] font-bold uppercase tracking-[0.22em] text-base-content/35">{{ $t('msgbox.image_editor.save_file') }}</div>
@@ -288,6 +454,7 @@ import { editImage, checkFileExists } from '@/common/api';
 import ModalDialog from '@/components/ModalDialog.vue';
 import MessageBox from '@/components/MessageBox.vue';
 import TButton from '@/components/TButton.vue';
+import SliderInput from '@/components/SliderInput.vue';
 
 import {
   IconCrop,
@@ -301,12 +468,18 @@ import {
   IconClose,
   IconOk,
   IconRestore,
+  IconPalette,
+  IconInformation,
 } from '@/common/icons';
 
 const props = defineProps({
   fileInfo: {
     type: Object,
     required: true,
+  },
+  initialTab: {
+    type: String,
+    default: 'edit',
   },
 });
 
@@ -317,6 +490,7 @@ const uiStore = useUIStore();
 const emit = defineEmits(['success', 'failed', 'cancel']);
 
 const isProcessing = ref(false);
+const activeEditorTab = ref<'edit' | 'adjust'>('edit');
 
 const containerRef = ref<HTMLElement | null>(null);
 const containerRect = ref<DOMRect | null>(null);
@@ -336,12 +510,30 @@ const isFlippedX = ref(false);
 const isFlippedY = ref(false);
 const scale = ref(1);
 const rotate = ref(0);
+const compareHold = ref(false);
+const brightness = ref(0);
+const contrast = ref(0);
+const saturation = ref(100);
+const hue = ref(0);
+const blur = ref(0);
+const displayedHistogramBrightness = ref(0);
+const displayedHistogramContrast = ref(0);
+const selectedFilter = ref('');
+const selectedPreset = ref('natural');
+const presetStripRef = ref<HTMLElement | null>(null);
+const histogramData = ref<number[]>(new Array(256).fill(0));
+let isApplyingPreset = false;
+let histogramToneAnimationFrame: number | null = null;
+let skipNextCustomPresetLoad = false;
 
 const imageStyle = computed((): CSSProperties => ({
   display: 'block',
-  minWidth: `${imageWidth.value}px`,
-  minHeight: `${imageHeight.value}px`,
+  width: `${imageWidth.value}px`,
+  height: `${imageHeight.value}px`,
+  maxWidth: 'none',
+  maxHeight: 'none',
   position: 'absolute',
+  filter: isComparingOriginal.value ? 'none' : adjustmentFilter.value,
   transform: `
     translate(${position.value.left}px, ${position.value.top}px)
     rotate(${rotate.value}deg)
@@ -350,7 +542,29 @@ const imageStyle = computed((): CSSProperties => ({
     scale(${scale.value})
   `,
   transition: enableTransition.value ? 'transform 0.3s ease' : 'none',
+  backfaceVisibility: 'hidden',
+  willChange: 'transform, filter',
 }));
+const isComparingOriginal = computed(() => compareHold.value);
+const adjustmentFilter = computed(() => {
+  const filters = [
+    `brightness(${100 + brightness.value}%)`,
+    `contrast(${100 + contrast.value}%)`,
+    `blur(${blur.value}px)`,
+    `hue-rotate(${hue.value}deg)`,
+    `saturate(${saturation.value}%)`,
+  ];
+
+  if (selectedFilter.value === 'grayscale') {
+    filters.push('grayscale(100%)');
+  } else if (selectedFilter.value === 'sepia') {
+    filters.push('sepia(100%)');
+  } else if (selectedFilter.value === 'invert') {
+    filters.push('invert(100%)');
+  }
+
+  return filters.join(' ');
+});
 
 const cropStatus = ref(0);
 const cropApplied = ref(false);
@@ -442,6 +656,155 @@ const hasEditImageChanges = computed(() =>
   isFlippedX.value ||
   isFlippedY.value
 );
+const presets: Record<string, any> = {
+  natural: { brightness: 0, contrast: 0, saturation: 100, hue: 0, blur: 0, filter: '' },
+  vivid: { brightness: 0, contrast: 10, saturation: 120, hue: 0, blur: 0, filter: '' },
+  muted: { brightness: 0, contrast: -10, saturation: 80, hue: 0, blur: 0, filter: '' },
+  warm: { brightness: 5, contrast: 0, saturation: 100, hue: 5, blur: 0, filter: '' },
+  cool: { brightness: 5, contrast: 0, saturation: 100, hue: -5, blur: 0, filter: '' },
+  bw: { brightness: 0, contrast: 0, saturation: 0, hue: 0, blur: 0, filter: 'grayscale' },
+  vintage: { brightness: 10, contrast: -10, saturation: 60, hue: 0, blur: 0, filter: 'sepia' },
+  invert: { brightness: 0, contrast: 0, saturation: 100, hue: 0, blur: 0, filter: 'invert' },
+  kodak: { brightness: 10, contrast: 15, saturation: 120, hue: -5, blur: 0, filter: '' },
+  toyo: { brightness: 5, contrast: 0, saturation: 110, hue: 5, blur: 0, filter: '' },
+  cinematic: { brightness: 0, contrast: 20, saturation: 80, hue: 0, blur: 0, filter: '' },
+  dramatic: { brightness: 0, contrast: 30, saturation: 110, hue: 0, blur: 0, filter: '' },
+  cyberpunk: { brightness: 10, contrast: 20, saturation: 130, hue: -15, blur: 0, filter: '' },
+};
+
+function resolvePresetKey(values: {
+  brightness: number;
+  contrast: number;
+  saturation: number;
+  hue: number;
+  blur: number;
+  filter: string;
+}) {
+  for (const [key, preset] of Object.entries(presets)) {
+    if (
+      preset.brightness === values.brightness &&
+      preset.contrast === values.contrast &&
+      preset.saturation === values.saturation &&
+      preset.hue === values.hue &&
+      preset.blur === values.blur &&
+      preset.filter === values.filter
+    ) {
+      return key;
+    }
+  }
+
+  return 'custom';
+}
+
+function getCurrentAdjustmentValues() {
+  return {
+    brightness: brightness.value,
+    contrast: contrast.value,
+    saturation: saturation.value,
+    hue: hue.value,
+    blur: blur.value,
+    filter: selectedFilter.value,
+  };
+}
+
+function getConfiguredCustomPreset() {
+  return {
+    brightness: Number(config.imageEditor.custom?.brightness ?? 0),
+    contrast: Number(config.imageEditor.custom?.contrast ?? 0),
+    saturation: Number(config.imageEditor.custom?.saturation ?? 100),
+    hue: Number(config.imageEditor.custom?.hue ?? 0),
+    blur: Number(config.imageEditor.custom?.blur ?? 0),
+    filter: String(config.imageEditor.custom?.filter ?? ''),
+  };
+}
+
+function persistCustomPreset(values = getCurrentAdjustmentValues()) {
+  config.imageEditor.custom = {
+    brightness: values.brightness,
+    contrast: values.contrast,
+    saturation: values.saturation,
+    hue: values.hue,
+    blur: values.blur,
+    filter: values.filter,
+  };
+}
+
+const presetOptions = computed(() => [
+  { value: 'custom', label: localeMsg.value.msgbox.image_editor.presets.custom },
+  { value: 'natural', label: localeMsg.value.msgbox.image_editor.presets.natural },
+  { value: 'vivid', label: localeMsg.value.msgbox.image_editor.presets.vivid },
+  { value: 'muted', label: localeMsg.value.msgbox.image_editor.presets.muted },
+  { value: 'warm', label: localeMsg.value.msgbox.image_editor.presets.warm },
+  { value: 'cool', label: localeMsg.value.msgbox.image_editor.presets.cool },
+  { value: 'bw', label: localeMsg.value.msgbox.image_editor.presets.bw },
+  { value: 'vintage', label: localeMsg.value.msgbox.image_editor.presets.vintage },
+  { value: 'kodak', label: localeMsg.value.msgbox.image_editor.presets.kodak },
+  { value: 'toyo', label: localeMsg.value.msgbox.image_editor.presets.toyo },
+  { value: 'cinematic', label: localeMsg.value.msgbox.image_editor.presets.cinematic },
+  { value: 'dramatic', label: localeMsg.value.msgbox.image_editor.presets.dramatic },
+  { value: 'cyberpunk', label: localeMsg.value.msgbox.image_editor.presets.cyberpunk },
+  { value: 'invert', label: localeMsg.value.msgbox.image_editor.presets.invert },
+]);
+const lightSliders = computed(() => [
+  {
+    key: 'brightness',
+    label: localeMsg.value.msgbox.image_editor.brightness,
+    model: brightness,
+    min: -100,
+    max: 100,
+    step: 1,
+    valueDisplay: `${brightness.value > 0 ? '+' : ''}${brightness.value}`,
+  },
+  {
+    key: 'contrast',
+    label: localeMsg.value.msgbox.image_editor.contrast,
+    model: contrast,
+    min: -100,
+    max: 100,
+    step: 1,
+    valueDisplay: `${contrast.value > 0 ? '+' : ''}${contrast.value}`,
+  },
+]);
+const colorSliders = computed(() => [
+  {
+    key: 'saturation',
+    label: localeMsg.value.msgbox.image_editor.saturation,
+    model: saturation,
+    min: 0,
+    max: 200,
+    step: 1,
+    valueDisplay: `${saturation.value}%`,
+  },
+  {
+    key: 'hue',
+    label: localeMsg.value.msgbox.image_editor.hue_rotate,
+    model: hue,
+    min: -180,
+    max: 180,
+    step: 1,
+    valueDisplay: `${hue.value > 0 ? '+' : ''}${hue.value}`,
+  },
+  {
+    key: 'blur',
+    label: localeMsg.value.msgbox.image_editor.blur,
+    model: blur,
+    min: 0,
+    max: 20,
+    step: 1,
+    valueDisplay: `${blur.value}`,
+  },
+]);
+const hasAdjustmentChanges = computed(() => {
+  const p = presets.natural;
+  return (
+    brightness.value !== p.brightness ||
+    contrast.value !== p.contrast ||
+    saturation.value !== p.saturation ||
+    hue.value !== p.hue ||
+    blur.value !== p.blur ||
+    selectedFilter.value !== p.filter
+  );
+});
 
 const cropShapeOptions = computed(() => {
   if (isPortrait.value) {
@@ -542,17 +905,125 @@ watch(
   }
 );
 
+watch(selectedPreset, () => {
+  if (selectedPreset.value === 'custom') {
+    if (skipNextCustomPresetLoad) {
+      skipNextCustomPresetLoad = false;
+      nextTick(() => {
+        scrollSelectedPresetIntoView();
+      });
+      return;
+    }
+
+    const custom = getConfiguredCustomPreset();
+    isApplyingPreset = true;
+    brightness.value = custom.brightness;
+    contrast.value = custom.contrast;
+    saturation.value = custom.saturation;
+    hue.value = custom.hue;
+    blur.value = custom.blur;
+    selectedFilter.value = custom.filter;
+    nextTick(() => {
+      isApplyingPreset = false;
+      scrollSelectedPresetIntoView();
+    });
+    return;
+  }
+
+  const p = presets[selectedPreset.value];
+  if (!p) return;
+  isApplyingPreset = true;
+  brightness.value = p.brightness;
+  contrast.value = p.contrast;
+  saturation.value = p.saturation;
+  hue.value = p.hue;
+  blur.value = p.blur;
+  selectedFilter.value = p.filter;
+  nextTick(() => {
+    isApplyingPreset = false;
+    scrollSelectedPresetIntoView();
+  });
+});
+
+watch(activeEditorTab, (tab) => {
+  if (tab !== 'adjust') return;
+  nextTick(() => {
+    scrollSelectedPresetIntoView();
+  });
+});
+
+watch([brightness, contrast], () => {
+  animateHistogramTone();
+});
+
+watch([brightness, contrast, saturation, hue, blur, selectedFilter], () => {
+  if (isApplyingPreset) return;
+
+  const currentValues = getCurrentAdjustmentValues();
+  const resolvedPreset = resolvePresetKey(currentValues);
+
+  if (resolvedPreset === 'custom') {
+    persistCustomPreset(currentValues);
+  }
+
+  if (selectedPreset.value !== 'custom') {
+    const p = presets[selectedPreset.value];
+    if (
+      p &&
+      (brightness.value !== p.brightness ||
+        contrast.value !== p.contrast ||
+        saturation.value !== p.saturation ||
+        hue.value !== p.hue ||
+        blur.value !== p.blur ||
+        selectedFilter.value !== p.filter)
+    ) {
+      skipNextCustomPresetLoad = true;
+      selectedPreset.value = 'custom';
+    }
+  }
+});
+
+watch(
+  [rotate, isFlippedX, isFlippedY, brightness, contrast, saturation, hue, blur, selectedFilter, () => resizeOutput.value.width, () => resizeOutput.value.height],
+  () => {
+    uiStore.setActiveAdjustments(props.fileInfo.file_path, {
+      rotate: rotate.value,
+      flipX: isFlippedX.value,
+      flipY: isFlippedY.value,
+      brightness: brightness.value,
+      contrast: contrast.value,
+      saturation: saturation.value,
+      hue: hue.value,
+      blur: blur.value,
+      filter: selectedFilter.value || null,
+      resize: resizeOutput.value.hasResize ? {
+        width: resizeOutput.value.width,
+        height: resizeOutput.value.height,
+      } : null,
+    });
+  },
+  { immediate: true }
+);
+
 onMounted(() => {
   window.addEventListener('keydown', handleKeyDown);
   uiStore.pushInputHandler('EditImage');
+  activeEditorTab.value = props.initialTab === 'adjust'
+    ? 'adjust'
+    : (config.imageEditor.tab === 'adjust' ? 'adjust' : 'edit');
 
   isProcessing.value = true;
   initEditImage();
+  updateRealHistogram();
 });
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown);
   uiStore.removeInputHandler('EditImage');
+  if (histogramToneAnimationFrame !== null) {
+    cancelAnimationFrame(histogramToneAnimationFrame);
+    histogramToneAnimationFrame = null;
+  }
 });
 
 const onImageLoad = async () => {
@@ -594,12 +1065,197 @@ const initEditImage = () => {
     rotate.value = adj.rotate || 0;
     isFlippedX.value = !!adj.flipX;
     isFlippedY.value = !!adj.flipY;
+    brightness.value = adj.brightness || 0;
+    contrast.value = adj.contrast || 0;
+    saturation.value = adj.saturation ?? 100;
+    hue.value = adj.hue || 0;
+    blur.value = adj.blur || 0;
+    selectedFilter.value = adj.filter || '';
+    const restoredPreset = resolvePresetKey({
+      brightness: brightness.value,
+      contrast: contrast.value,
+      saturation: saturation.value,
+      hue: hue.value,
+      blur: blur.value,
+      filter: selectedFilter.value,
+    });
+    if (restoredPreset === 'custom') {
+      skipNextCustomPresetLoad = true;
+    }
+    selectedPreset.value = restoredPreset;
   } else {
     rotate.value = 0;
     isFlippedX.value = false;
     isFlippedY.value = false;
+    resetAdjustments();
   }
+
+  displayedHistogramBrightness.value = brightness.value;
+  displayedHistogramContrast.value = contrast.value;
 };
+
+const updateRealHistogram = () => {
+  if (!props.fileInfo?.thumbnail) return;
+
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.src = props.fileInfo.thumbnail;
+
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return;
+
+    const size = 256;
+    canvas.width = size;
+    canvas.height = size;
+    ctx.drawImage(img, 0, 0, size, size);
+
+    const imageData = ctx.getImageData(0, 0, size, size).data;
+    const hist = new Array(256).fill(0);
+
+    for (let i = 0; i < imageData.length; i += 4) {
+      const r = imageData[i];
+      const g = imageData[i + 1];
+      const b = imageData[i + 2];
+      const gray = Math.round(0.2126 * r + 0.7152 * g + 0.0722 * b);
+      hist[gray]++;
+    }
+
+    const maxVal = Math.max(...hist);
+    histogramData.value = maxVal > 0 ? hist.map((v) => (v / maxVal) * 58) : new Array(256).fill(0);
+  };
+};
+
+const generateHistogramPath = () => {
+  if (!histogramData.value) return '';
+
+  const width = 256;
+  const height = 64;
+  const br = (100 + displayedHistogramBrightness.value) / 100;
+  const ct = (100 + displayedHistogramContrast.value) / 100;
+
+  const sampledPoints: { x: number; y: number }[] = [];
+  const step = 2;
+
+  for (let i = 0; i <= 256; i += step) {
+    let sum = 0;
+    let count = 0;
+    const windowSize = 2;
+
+    for (let j = Math.max(0, i - windowSize); j < Math.min(256, i + windowSize); j++) {
+      sum += histogramData.value[j];
+      count++;
+    }
+
+    const val = count > 0 ? sum / count : 0;
+    const x = (i * br - 128) * ct + 128;
+    const y = height - val;
+
+    if (x >= -10 && x <= width + 10) sampledPoints.push({ x, y });
+  }
+
+  if (sampledPoints.length < 2) return '';
+
+  let path = `M 0,${height}`;
+
+  for (let i = 0; i < sampledPoints.length; i++) {
+    const p = sampledPoints[i];
+    if (i === 0) {
+      path += ` L ${p.x.toFixed(1)},${p.y.toFixed(1)}`;
+    } else {
+      const prev = sampledPoints[i - 1];
+      const cp1x = prev.x + (p.x - prev.x) / 2;
+      const cp1y = prev.y;
+      const cp2x = prev.x + (p.x - prev.x) / 2;
+      const cp2y = p.y;
+      path += ` C ${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p.x.toFixed(1)},${p.y.toFixed(1)}`;
+    }
+  }
+
+  path += ` L ${width},${height} Z`;
+  return path;
+};
+
+function animateHistogramTone() {
+  if (histogramToneAnimationFrame !== null) {
+    cancelAnimationFrame(histogramToneAnimationFrame);
+    histogramToneAnimationFrame = null;
+  }
+
+  const startBrightness = displayedHistogramBrightness.value;
+  const startContrast = displayedHistogramContrast.value;
+  const targetBrightness = brightness.value;
+  const targetContrast = contrast.value;
+
+  if (startBrightness === targetBrightness && startContrast === targetContrast) {
+    return;
+  }
+
+  const startTime = performance.now();
+  const duration = 180;
+
+  const step = (now: number) => {
+    const progress = Math.min(1, (now - startTime) / duration);
+    const eased = 1 - Math.pow(1 - progress, 3);
+
+    displayedHistogramBrightness.value = startBrightness + (targetBrightness - startBrightness) * eased;
+    displayedHistogramContrast.value = startContrast + (targetContrast - startContrast) * eased;
+
+    if (progress < 1) {
+      histogramToneAnimationFrame = requestAnimationFrame(step);
+      return;
+    }
+
+    displayedHistogramBrightness.value = targetBrightness;
+    displayedHistogramContrast.value = targetContrast;
+    histogramToneAnimationFrame = null;
+  };
+
+  histogramToneAnimationFrame = requestAnimationFrame(step);
+}
+
+const getPresetThumbnailStyle = (presetKey: string): CSSProperties => {
+  const p = presets[presetKey];
+  if (!p) return {};
+  return {
+    filter: `
+      brightness(${100 + p.brightness}%)
+      contrast(${100 + p.contrast}%)
+      blur(${p.blur}px)
+      hue-rotate(${p.hue}deg)
+      saturate(${p.saturation}%)
+      ${p.filter === 'grayscale' ? 'grayscale(100%)' : ''}
+      ${p.filter === 'sepia' ? 'sepia(100%)' : ''}
+      ${p.filter === 'invert' ? 'invert(100%)' : ''}
+    `,
+  };
+};
+
+const scrollSelectedPresetIntoView = () => {
+  const container = presetStripRef.value;
+  const selected = container?.querySelector(`[data-preset="${selectedPreset.value}"]`);
+  if (!container || !selected) return;
+  selected.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+};
+
+const resetAdjustments = () => {
+  const p = presets.natural;
+  brightness.value = p.brightness;
+  contrast.value = p.contrast;
+  saturation.value = p.saturation;
+  hue.value = p.hue;
+  blur.value = p.blur;
+  selectedFilter.value = p.filter;
+  selectedPreset.value = 'natural';
+  compareHold.value = false;
+};
+
+function setActiveEditorTab(tab: 'edit' | 'adjust') {
+  if (cropStatus.value === 1) return;
+  activeEditorTab.value = tab;
+  config.imageEditor.tab = tab;
+}
 
 const clickStartCrop = () => {
   cropStatus.value = 1;
@@ -963,6 +1619,20 @@ function handleKeyDown(event: KeyboardEvent) {
   if (!uiStore.isInputActive('EditImage')) return;
 
   switch (event.key) {
+    case 'ArrowLeft':
+      if (activeEditorTab.value === 'adjust') {
+        movePresetSelection(-1);
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      break;
+    case 'ArrowRight':
+      if (activeEditorTab.value === 'adjust') {
+        movePresetSelection(1);
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      break;
     case 'Enter':
       if (cropStatus.value === 1) {
         clickDoCrop();
@@ -1000,6 +1670,21 @@ const clickCancel = () => {
   emit('cancel');
 };
 
+function handleComparePointerDown() {
+  compareHold.value = true;
+}
+
+function handleComparePointerUp() {
+  compareHold.value = false;
+}
+
+function movePresetSelection(direction: number) {
+  const currentIndex = presetOptions.value.findIndex(option => option.value === selectedPreset.value);
+  if (currentIndex === -1) return;
+  const nextIndex = Math.max(0, Math.min(presetOptions.value.length - 1, currentIndex + direction));
+  selectedPreset.value = presetOptions.value[nextIndex].value;
+}
+
 const setEditParams = (overrides: { fileName?: string; destFilePath?: string; outputFormat?: string } = {}) => {
   let name = overrides.fileName || newFileName.value;
   let outputFormat = overrides.outputFormat || fileFormatOptions.value[config.imageEditor.format].label.toLowerCase();
@@ -1028,12 +1713,12 @@ const setEditParams = (overrides: { fileName?: string; destFilePath?: string; ou
       width: resizeOutput.value.hasResize && resizeOutput.value.width !== baseOutputWidth.value ? resizeOutput.value.width : null,
       height: resizeOutput.value.hasResize && resizeOutput.value.height !== baseOutputHeight.value ? resizeOutput.value.height : null,
     },
-    filter: null,
-    brightness: null,
-    contrast: null,
-    blur: null,
-    hue_rotate: null,
-    saturation: null,
+    filter: selectedFilter.value || null,
+    brightness: brightness.value !== 0 ? brightness.value : null,
+    contrast: contrast.value !== 0 ? contrast.value : null,
+    blur: blur.value > 0 ? blur.value : null,
+    hue_rotate: hue.value !== 0 ? hue.value : null,
+    saturation: saturation.value !== 100 ? saturation.value / 100.0 : null,
   };
 };
 

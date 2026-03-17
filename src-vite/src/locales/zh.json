@@ -326,7 +326,6 @@
       "view_in_new_window": "在新窗口中查看...",
       "copy": "复制到剪贴板",
       "edit_image": "编辑图片...",
-      "adjust": "调整...",
       "find_similar_images": "查找相似图片",
       "find_person_images": "查找人物图片",
       "find_album_folder": "查找相册文件夹",
@@ -533,8 +532,8 @@
     },
     "image_editor": {
       "title": "编辑图片",
-      "adjust_title": "调整图片",
-      "tab_edit": "调整",
+      "tab_edit": "Edit",
+      "tab_adjust": "Adjust",
       "histogram": "直方图",
       "light": "光影",
       "color": "颜色",
@@ -628,10 +627,13 @@
   },
   "file_info": {
     "title": "信息",
+    "preview": "缩略图",
+    "preview_size": "缩略图大小",
     "general": "常规",
     "metadata": "元数据",
     "location": "地点",
     "map": "地图",
+    "open_apple_maps": "在 Apple 地图中打开",
     "empty_title": "未选择文件",
     "empty_desc": "请选择一个文件以查看其详细信息和元数据。",
     "album_name": "相册",
@@ -676,7 +678,9 @@
     "hide_map": "隐藏地图",
     "zoom_in": "放大",
     "zoom_out": "缩小",
-    "zoom_center": "中心"
+    "zoom_center": "中心",
+    "standard": "标准",
+    "satellite": "卫星"
   },
   "format": {
     "year": "yyyy年",
@@ -791,6 +795,10 @@
         "大",
         "更大"
       ],
+      "external_editor": "外部编辑器",
+      "external_editor_not_selected": "未选择应用",
+      "choose_app": "选择应用",
+      "clear_app": "清除",
       "show_button_text": "显示按钮文本",
       "show_tool_tip": "显示工具提示",
       "show_status_bar": "显示状态栏",
@@ -852,6 +860,11 @@
       "auto_play_video": "自动播放视频",
       "show_comment": "显示备注",
       "show_comment_hint": "当在新窗口查看图片时，显示备注",
+      "external_image_editor": "外部图片编辑器",
+      "external_video_app": "外部视频应用",
+      "external_app_not_selected": "未选择应用",
+      "choose_app": "选择应用",
+      "clear_app": "清除",
       "navigator_view": "导航器显示",
       "navigator_view_options": [
         "自动",

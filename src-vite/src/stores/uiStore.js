@@ -6,6 +6,7 @@ export const useUIStore = defineStore('ui', {
     inputStack: [],
     fileVersions: {},
     isFullScreen: false,
+    mapActive: false,
     activeAdjustments: {
       filePath: null,
       brightness: 0,
@@ -66,6 +67,9 @@ export const useUIStore = defineStore('ui', {
     updateFileVersion(filePath) {
       const currentVersion = this.fileVersions[filePath] || 0;
       this.fileVersions[filePath] = currentVersion + 1;
+    },
+    setMapActive(active) {
+      this.mapActive = !!active;
     },
     setActiveAdjustments(filePath, adjustments) {
       this.activeAdjustments = {

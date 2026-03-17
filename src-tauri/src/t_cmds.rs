@@ -273,6 +273,12 @@ pub fn reveal_folder(folder_path: &str) -> Result<(), String> {
     opener::open(folder_path).map_err(|e| e.to_string())
 }
 
+/// open an external URL or app-specific deep link
+#[tauri::command]
+pub fn open_external_url(url: &str) -> Result<(), String> {
+    opener::open(url).map_err(|e| e.to_string())
+}
+
 // file
 
 /// get total file count and sum

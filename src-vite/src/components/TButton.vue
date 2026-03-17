@@ -1,6 +1,7 @@
 <template>
   <div>
     <div 
+      ref="triggerRef"
       class="relative inline-block"
       @mouseenter="showTooltip"
       @mouseleave="hideTooltip"
@@ -45,20 +46,24 @@
           {{ text }}
         </span>
       </button>
+    </div>
+    <Teleport to="body">
       <transition name="fade">
-        <div 
+        <div
           v-if="isHovered && tooltipText && config.settings.showToolTip"
-          class="absolute z-1000 left-1/2 -translate-x-1/2 top-full mt-1 px-2 py-1 text-xs whitespace-nowrap rounded-box bg-neutral text-neutral-content shadow-lg pointer-events-none"
+          ref="tooltipRef"
+          class="fixed z-1000 px-2 py-1 text-xs leading-tight max-w-xs whitespace-normal text-center rounded-box bg-neutral text-neutral-content shadow-lg pointer-events-none"
+          :style="tooltipStyle"
         >
           {{ tooltipText }}
         </div>
       </transition>
-    </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onBeforeUnmount } from 'vue';
+import { computed, ref, onBeforeUnmount, nextTick, watch, type CSSProperties } from 'vue';
 import { config } from '@/common/config';
 import type { Component } from 'vue';
 
@@ -120,7 +125,14 @@ const tooltipText = computed(() => {
 });
 
 const isHovered = ref(false);
+const triggerRef = ref<HTMLElement | null>(null);
+const tooltipRef = ref<HTMLElement | null>(null);
+const tooltipStyle = ref<CSSProperties>({
+  left: '0px',
+  top: '0px',
+});
 let tooltipTimer: ReturnType<typeof setTimeout> | null = null;
+let removeTooltipPositionListeners: (() => void) | null = null;
 
 const clearTooltipTimer = () => {
   if (tooltipTimer) {
@@ -129,14 +141,63 @@ const clearTooltipTimer = () => {
   }
 };
 
+const removePositionListeners = () => {
+  if (removeTooltipPositionListeners) {
+    removeTooltipPositionListeners();
+    removeTooltipPositionListeners = null;
+  }
+};
+
+const updateTooltipPosition = async () => {
+  await nextTick();
+
+  if (!triggerRef.value || !tooltipRef.value) return;
+
+  const triggerRect = triggerRef.value.getBoundingClientRect();
+  const tooltipRect = tooltipRef.value.getBoundingClientRect();
+  const gap = 6;
+  const padding = 8;
+
+  let left = triggerRect.left + (triggerRect.width - tooltipRect.width) / 2;
+  left = Math.max(padding, Math.min(left, window.innerWidth - tooltipRect.width - padding));
+
+  let top = triggerRect.bottom + gap;
+  if (top + tooltipRect.height > window.innerHeight - padding) {
+    top = triggerRect.top - tooltipRect.height - gap;
+  }
+
+  tooltipStyle.value = {
+    left: `${Math.round(left)}px`,
+    top: `${Math.round(top)}px`,
+  };
+};
+
+const attachPositionListeners = () => {
+  if (removeTooltipPositionListeners) return;
+
+  const handler = () => {
+    void updateTooltipPosition();
+  };
+
+  window.addEventListener('resize', handler);
+  window.addEventListener('scroll', handler, true);
+  removeTooltipPositionListeners = () => {
+    window.removeEventListener('resize', handler);
+    window.removeEventListener('scroll', handler, true);
+  };
+};
+
 const showTooltip = () => {
   if (!tooltipText.value || !config.settings.showToolTip) return;
 
   clearTooltipTimer();
   isHovered.value = true;
+  attachPositionListeners();
+  void updateTooltipPosition();
 
   tooltipTimer = setTimeout(() => {
     isHovered.value = false;
+    removePositionListeners();
     tooltipTimer = null;
   }, 3000);
 };
@@ -144,9 +205,16 @@ const showTooltip = () => {
 const hideTooltip = () => {
   clearTooltipTimer();
   isHovered.value = false;
+  removePositionListeners();
 };
+
+watch(isHovered, (visible) => {
+  if (!visible) return;
+  void updateTooltipPosition();
+});
 
 onBeforeUnmount(() => {
   clearTooltipTimer();
+  removePositionListeners();
 });
 </script>

@@ -232,6 +232,17 @@ export async function removeAlbum(albumId) {
   return null;
 }
 
+// open an external URL or deep link
+export async function openExternalUrl(url) {
+  try {
+    await invoke('open_external_url', { url });
+    return true;
+  } catch (error) {
+    console.error('Failed to open external URL:', error);
+    throw error;
+  }
+}
+
 // set display order 
 export async function setDisplayOrder(albumId, order) {
   try {

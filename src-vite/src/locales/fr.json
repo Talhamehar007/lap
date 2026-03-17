@@ -326,7 +326,6 @@
       "view_in_new_window": "Détacher fenêtre...",
       "copy": "Copier dans presse-papiers",
       "edit_image": "Modifier l'image...",
-      "adjust": "Ajuster...",
       "find_similar_images": "Trouver similaires",
       "find_person_images": "Trouver photos personne",
       "find_album_folder": "Ouvrir dossier album",
@@ -533,8 +532,8 @@
     },
     "image_editor": {
       "title": "Éditer image",
-      "adjust_title": "Ajuster image",
-      "tab_edit": "Ajuster",
+      "tab_edit": "Edit",
+      "tab_adjust": "Adjust",
       "histogram": "Histogramme",
       "light": "Lumière",
       "color": "Couleur",
@@ -628,10 +627,13 @@
   },
   "file_info": {
     "title": "Info fichier",
+    "preview": "Miniature",
+    "preview_size": "Taille de la miniature",
     "general": "Général",
     "metadata": "Métadonnées",
     "location": "Lieu",
     "map": "Carte",
+    "open_apple_maps": "Ouvrir dans Apple Plans",
     "empty_title": "Aucun fichier sélectionné",
     "empty_desc": "Sélectionnez un fichier pour afficher ses détails et ses métadonnées.",
     "album_name": "Album",
@@ -676,7 +678,9 @@
     "hide_map": "Masquer carte",
     "zoom_in": "Zoom av.",
     "zoom_out": "Zoom arr.",
-    "zoom_center": "Centrer"
+    "zoom_center": "Centrer",
+    "standard": "Standard",
+    "satellite": "Satellite"
   },
   "format": {
     "year": "yyyy",
@@ -791,6 +795,10 @@
         "Grand",
         "Plus grand"
       ],
+      "external_editor": "Editeur externe",
+      "external_editor_not_selected": "Aucune app selectionnee",
+      "choose_app": "Choisir une app",
+      "clear_app": "Effacer",
       "show_button_text": "Texte boutons",
       "show_tool_tip": "Bulles aide",
       "show_status_bar": "Barre d'état",
@@ -852,6 +860,11 @@
       "auto_play_video": "Lecture auto vidéo",
       "show_comment": "Afficher commentaire",
       "show_comment_hint": "Dans nouvelle fenêtre",
+      "external_image_editor": "Editeur d'image externe",
+      "external_video_app": "App video externe",
+      "external_app_not_selected": "Aucune app selectionnee",
+      "choose_app": "Choisir une app",
+      "clear_app": "Effacer",
       "navigator_view": "Visibilité du navigateur",
       "navigator_view_options": [
         "Auto",

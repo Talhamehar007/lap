@@ -71,6 +71,12 @@ listen('settings-darkTheme-changed', (event) => {
 listen('settings-scale-changed', (event) => {
   config.setScale(event.payload)
 })
+listen('settings-externalImageEditorPath-changed', (event) => {
+  config.setExternalImageEditorPath(event.payload)
+})
+listen('settings-externalVideoAppPath-changed', (event) => {
+  config.setExternalVideoAppPath(event.payload)
+})
 listen('settings-language-changed', (event) => {
   config.setLanguage(event.payload)
 })

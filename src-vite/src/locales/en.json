@@ -326,7 +326,6 @@
       "view_in_new_window": "View in new window...",
       "copy": "Copy to clipboard",
       "edit_image": "Edit image...",
-      "adjust": "Adjust...",
       "find_similar_images": "Find similar images",
       "find_person_images": "Find person images",
       "find_album_folder": "Find album folder",
@@ -533,8 +532,8 @@
     },
     "image_editor": {
       "title": "Edit image",
-      "adjust_title": "Adjust image",
-      "tab_edit": "Adjust",
+      "tab_edit": "Edit",
+      "tab_adjust": "Adjust",
       "histogram": "Histogram",
       "light": "Light",
       "color": "Color",
@@ -628,10 +627,13 @@
   },
   "file_info": {
     "title": "Information",
+    "preview": "Thumbnail",
+    "preview_size": "Thumbnail size",
     "general": "General",
     "metadata": "Metadata",
     "location": "Location",
     "map": "Map",
+    "open_apple_maps": "Open in Apple Maps",
     "empty_title": "No file selected",
     "empty_desc": "Select a file to view its details and metadata.",
     "album_name": "Album",
@@ -676,7 +678,9 @@
     "hide_map": "Hide map",
     "zoom_in": "Zoom in",
     "zoom_out": "Zoom out",
-    "zoom_center": "Center"
+    "zoom_center": "Center",
+    "standard": "Standard",
+    "satellite": "Satellite"
   },
   "format": {
     "year": "yyyy",
@@ -791,6 +795,10 @@
         "Large",
         "Larger"
       ],
+      "external_editor": "External editor",
+      "external_editor_not_selected": "No app selected",
+      "choose_app": "Choose App",
+      "clear_app": "Clear",
       "show_button_text": "Show button text",
       "show_tool_tip": "Show tooltips",
       "show_status_bar": "Show status bar",
@@ -852,6 +860,11 @@
       "auto_play_video": "Auto play video",
       "show_comment": "Show comment ",
       "show_comment_hint": "When view in new window, show image comment",
+      "external_image_editor": "External image editor",
+      "external_video_app": "External video app",
+      "external_app_not_selected": "No app selected",
+      "choose_app": "Choose App",
+      "clear_app": "Clear",
       "navigator_view": "Navigator visibility",
       "navigator_view_options": [
         "Auto",

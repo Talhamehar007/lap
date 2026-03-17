@@ -20,18 +20,69 @@
     <!-- Info Content -->
     <div v-if="fileInfo" class="mb-2 px-2 flex-1 overflow-y-auto overflow-x-hidden space-y-3 flex flex-col bg-base-200/50">
 
-      <!-- Title / Thumbnail -->
-      <!-- <div class="flex justify-center p-2">
-        <div class="relative w-16 h-16 rounded-box shrink-0 shadow-sm border border-base-content/5">
-          <img v-if="fileInfo?.thumbnail" :src="fileInfo.thumbnail" :style="thumbnailStyle" class="w-full h-full object-cover rounded-box" />
-          <div v-else-if="fileInfo" class="w-full h-full skeleton object-cover rounded-box"></div>
-          <div v-else class="w-full h-full bg-base-content/5 rounded-box"></div>
-          
-          <div v-if="fileInfo?.is_favorite" class="absolute -bottom-1 -right-1 drop-shadow-md">
-            <IconHeartFilled class="t-icon-size-xs" />
-          </div>
+      <!-- Preview Section -->
+      <div class="group/thumbnail rounded-box p-3 space-y-3 bg-base-300/30 border border-base-content/5 shadow-sm">
+        <div
+          class="flex items-center gap-2 cursor-pointer text-base-content/70 hover:text-base-content transition-all duration-200 ease-in-out"
+          @click.stop="togglePreview"
+        >
+          <component :is="fileInfo?.file_type === 2 ? IconVideo : IconPhoto" class="w-4 h-4" />
+          <span class="font-bold mr-auto uppercase text-xs tracking-wide">{{ $t('file_info.preview') }}</span>
+          <TButton
+            :icon="showPreviewPanel ? IconArrowDown : IconArrowUp"
+            :buttonSize="'small'"
+          />
         </div>
-      </div> -->
+
+        <Transition
+          @before-enter="onBeforeEnter"
+          @enter="onEnter"
+          @after-enter="onAfterEnter"
+          @leave="onLeave"
+        >
+          <div v-if="showPreviewPanel" class="overflow-hidden">
+            <div
+              class="relative w-full overflow-hidden rounded-box border border-base-content/5 bg-base-200/60 shadow-sm transition-[padding-top] duration-200 ease-out"
+              :style="{ paddingTop: `${75 * previewScale}%` }"
+            >
+              <div class="absolute top-2 left-2 flex bg-base-100/30 hover:bg-base-100/70 rounded-box z-10 cursor-pointer opacity-0 pointer-events-none transition-opacity duration-150 group-hover/thumbnail:opacity-100 group-hover/thumbnail:pointer-events-auto">
+                <TButton
+                  :icon="IconZoomOut"
+                  :tooltip="$t('map.zoom_out')"
+                  :disabled="previewScale <= previewScaleOptions[previewScaleOptions.length - 1]"
+                  @click.stop="decreasePreviewScale"
+                />
+                <TButton
+                  :icon="IconZoomIn"
+                  :tooltip="$t('map.zoom_in')"
+                  :disabled="previewScale >= previewScaleOptions[0]"
+                  @click.stop="increasePreviewScale"
+                />
+              </div>
+              <div class="absolute inset-0">
+                <img
+                  v-if="fileInfo?.thumbnail"
+                  :src="fileInfo.thumbnail"
+                  class="h-full w-full object-contain bg-base-100/20"
+                />
+                <div v-else class="flex h-full w-full items-center justify-center bg-base-content/5">
+                  <component
+                    :is="fileInfo?.file_type === 2 ? IconVideo : IconPhoto"
+                    class="w-10 h-10 text-base-content/20"
+                  />
+                </div>
+              </div>
+
+              <!-- <div
+                v-if="fileInfo?.is_favorite"
+                class="absolute top-2 right-2 rounded-full bg-error/90 p-1 shadow-sm"
+              >
+                <IconHeartFilled class="w-3.5 h-3.5 text-white" />
+              </div> -->
+            </div>
+          </div>
+        </Transition>
+      </div>
 
       <!-- File Info Section -->
       <div class="rounded-box p-3 space-y-3 bg-base-300/30 border border-base-content/5 shadow-sm">
@@ -303,6 +354,7 @@
               <MapView
                 :lat="fileInfo.gps_latitude ? Number(fileInfo.gps_latitude) : 0"
                 :lon="fileInfo.gps_longitude ? Number(fileInfo.gps_longitude) : 0"
+                :label="fileInfo.geo_name || fileInfo.name || 'Lap'"
               />
             </div>
           </div>
@@ -350,7 +402,11 @@ import {
   IconClose, IconLocation, IconArrowDown, IconArrowUp, IconCameraAperture, 
   IconFile, IconFolderSearch, IconHeart, IconHeartFilled, IconStar, IconStarFilled, IconEdit,
   IconFolderExpanded,
+  IconPhoto,
   IconRotate,
+  IconVideo,
+  IconZoomIn,
+  IconZoomOut,
 } from '@/common/icons';
 import TButton from '@/components/TButton.vue';
 import ToolTip from '@/components/ToolTip.vue';
@@ -380,6 +436,15 @@ const emit = defineEmits([
 ]);
 
 const toolTipRef = ref<InstanceType<typeof ToolTip> | null>(null);
+const showPreviewPanel = computed(() => config.infoPanel.showPreview);
+const previewScaleOptions = [1, 0.75, 0.5, 0.25];
+const previewScale = computed({
+  get: () => Number(config.infoPanel.previewScale || 1),
+  set: (value: number | string) => {
+    const numeric = Number(value);
+    config.infoPanel.previewScale = previewScaleOptions.includes(numeric) ? numeric : 1;
+  },
+});
 const showBasicInfoPanel = computed(() => config.infoPanel.showBasicInfo);
 const showMetadataPanel = computed(() => config.infoPanel.showMetadata);
 const showMapPanel = computed(() => config.infoPanel.showMap);
@@ -387,6 +452,24 @@ const normalizedRotate = computed(() => {
   const rotate = Number(props.fileInfo?.rotate || 0) % 360;
   return rotate < 0 ? rotate + 360 : rotate;
 });
+
+function togglePreview() {
+  config.infoPanel.showPreview = !config.infoPanel.showPreview;
+}
+
+function increasePreviewScale() {
+  const index = previewScaleOptions.indexOf(previewScale.value);
+  if (index > 0) {
+    previewScale.value = previewScaleOptions[index - 1];
+  }
+}
+
+function decreasePreviewScale() {
+  const index = previewScaleOptions.indexOf(previewScale.value);
+  if (index >= 0 && index < previewScaleOptions.length - 1) {
+    previewScale.value = previewScaleOptions[index + 1];
+  }
+}
 
 function toggleBasicInfo() {
   config.infoPanel.showBasicInfo = !config.infoPanel.showBasicInfo;

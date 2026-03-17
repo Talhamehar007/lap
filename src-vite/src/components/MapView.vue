@@ -1,34 +1,52 @@
 <template>
-  <div class="relative w-full h-full min-h-[300px] border border-base-content/30 rounded-box overflow-hidden">
+  <div
+    class="group/map relative w-full h-full min-h-[300px] border border-base-content/30 rounded-box overflow-hidden"
+    @mouseenter="uiStore.setMapActive(true)"
+    @mouseleave="uiStore.setMapActive(false)"
+  >
     <div ref="mapEl" style="width:100%; height:100%;"></div>
-    <div class="absolute top-2 left-2 flex bg-base-100/30 hover:bg-base-100/70 rounded-box z-500 cursor-pointer">
+    <div class="absolute top-2 left-2 flex bg-base-100/30 hover:bg-base-100/70 rounded-box z-500 cursor-pointer opacity-0 pointer-events-none transition-opacity duration-150 group-hover/map:opacity-100 group-hover/map:pointer-events-auto">
       <TButton
         :icon="IconZoomOut"
+        :tooltip="t('map.zoom_out')"
         :disabled="zoom <= 0"
         @click="zoomOut"
       />
       <TButton
         :icon="IconZoomIn"
+        :tooltip="t('map.zoom_in')"
         :disabled="zoom >= 18"
         @click="zoomIn"
       />
       <TButton
         :icon="IconMapCenter"
+        :tooltip="t('map.zoom_center')"
         @click="zoomCenter"
       />
       <TButton
         :icon="config.infoPanel.mapTheme === 0 ? IconMapDefault : IconMapSatellite"
+        :tooltip="t(config.infoPanel.mapTheme === 0 ? 'map.standard' : 'map.satellite')"
         @click="toggleMap"
+      />
+      <TButton
+        v-if="showAppleMapsButton"
+        :icon="IconExternal"
+        :tooltip="t('file_info.open_apple_maps')"
+        @click="openAppleMaps"
       />
     </div>
   </div>
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { config } from '@/common/config'
+import { openExternalUrl } from '@/common/api'
+import { isMac } from '@/common/utils'
+import { useUIStore } from '@/stores/uiStore'
 
-import { IconZoomIn, IconZoomOut, IconMapCenter, IconMapDefault, IconMapSatellite } from '@/common/icons'
+import { IconZoomIn, IconZoomOut, IconMapCenter, IconMapDefault, IconMapSatellite, IconExternal } from '@/common/icons'
 import TButton from '@/components/TButton.vue'
 
 import L from 'leaflet'
@@ -55,7 +73,14 @@ const props = defineProps({
     type: Number, 
     default: 13,
   },
+  label: {
+    type: String,
+    default: 'Lap',
+  },
 })
+
+const { t } = useI18n()
+const uiStore = useUIStore()
 
 const mapTheme = [
   {
@@ -76,12 +101,14 @@ let map = null
 let layer = null
 let zoom = ref(props.zoom)
 let resizeObserver = null
+const showAppleMapsButton = computed(() => isMac && validLatLon(props.lat, props.lon))
 
 onMounted(() => {
   map = L.map(mapEl.value, {
     center: [0, 0],
     zoom: 2,
     // attributionControl: false,
+    keyboard: false,
     zoomControl: false,
     maxZoom: 19,
   })
@@ -109,9 +136,12 @@ onMounted(() => {
 
   updateTheme()
   updateFromProps()
+  window.addEventListener('keydown', handleMapKeyDown, true)
 })
 
 onBeforeUnmount(() => {
+  uiStore.setMapActive(false)
+  window.removeEventListener('keydown', handleMapKeyDown, true)
   if (map) map.remove()
   if (resizeObserver) resizeObserver.disconnect()
 })
@@ -178,6 +208,34 @@ function updateTheme() {
       layer = null
     }
     layer = L.tileLayer(theme.url, { attribution: theme.attribution }).addTo(map)
+  }
+}
+
+async function openAppleMaps() {
+  if (!showAppleMapsButton.value) return
+  const label = props.label?.trim() || 'Lap'
+  const url = `maps://?ll=${props.lat},${props.lon}&q=${encodeURIComponent(label)}`
+  await openExternalUrl(url)
+}
+
+function handleMapKeyDown(event) {
+  const target = event.target
+  if (target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable) {
+    return
+  }
+
+  if (!uiStore.mapActive || event.metaKey || event.ctrlKey || event.altKey) {
+    return
+  }
+
+  if (event.key === '=') {
+    event.preventDefault()
+    event.stopPropagation()
+    zoomIn()
+  } else if (event.key === '-') {
+    event.preventDefault()
+    event.stopPropagation()
+    zoomOut()
   }
 }
 

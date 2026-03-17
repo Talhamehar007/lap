@@ -19,7 +19,6 @@ import {
   IconFolderSearch,
   IconPersonSearch,
   IconImageEdit,
-  IconAdjustments,
 } from '@/common/icons';
 
 export const useFileMenuItems = (
@@ -76,12 +75,6 @@ export const useFileMenuItems = (
         shortcut: isMac ? '⌘E' : 'Ctrl+E',
         disabled: f.file_type !== 1 && f.file_type !== 3,
         action: createAction('edit')
-      },
-      {
-        label: localeMsg.value.menu.file.adjust,
-        icon: markRaw(IconAdjustments),
-        disabled: f.file_type !== 1 && f.file_type !== 3,
-        action: createAction('adjust')
       },
       {
         label: localeMsg.value.menu.file.copy,

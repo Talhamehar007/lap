@@ -243,10 +243,16 @@ const getMenuItemsForFolder = (folder: any) => {
     },
     {
       label: localeMsg.value.menu.file.copy_to,
-      icon: IconCopyTo, 
+      // icon: IconCopyTo, 
       disabled: isRoot,
       action: () => {
         showCopyTo.value = true;
+      }
+    },
+    {
+      label: isMac ? localeMsg.value.menu.file.reveal_in_finder : localeMsg.value.menu.file.reveal_in_file_explorer,
+      action: () => {
+        revealFolder(folder.path);
       }
     },
     {
@@ -255,12 +261,6 @@ const getMenuItemsForFolder = (folder: any) => {
       disabled: isRoot,
       action: () => {
         showTrashFolderMsgbox.value = true;
-      }
-    },
-    {
-      label: isMac ? localeMsg.value.menu.file.reveal_in_finder : localeMsg.value.menu.file.reveal_in_file_explorer,
-      action: () => {
-        revealFolder(folder.path);
       }
     },
     // Hidden for now: favorite folders
