@@ -11,7 +11,7 @@ on:
         type: string
 
 permissions:
-  contents: read
+  contents: write
   issues: write
 
 concurrency:
@@ -187,3 +187,46 @@ jobs:
             src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app.tar.gz
             src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app.tar.gz.sig
           if-no-files-found: error
+
+      - name: Prepare files for pr-build release tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release-files
+
+          find src-tauri/target/aarch64-apple-darwin/release/bundle/dmg -name "*.dmg" -exec cp {} release-files/ \; 2>/dev/null || true
+          find src-tauri/target/release/bundle/dmg -name "*.dmg" -exec cp {} release-files/ \; 2>/dev/null || true
+          find src-tauri/target/aarch64-apple-darwin/release/bundle/dmg -name "*.dmg.sig" -exec cp {} release-files/ \; 2>/dev/null || true
+          find src-tauri/target/release/bundle/dmg -name "*.dmg.sig" -exec cp {} release-files/ \; 2>/dev/null || true
+          find src-tauri/target/aarch64-apple-darwin/release/bundle/macos -name "*.app.tar.gz" -exec cp {} release-files/ \; 2>/dev/null || true
+          find src-tauri/target/release/bundle/macos -name "*.app.tar.gz" -exec cp {} release-files/ \; 2>/dev/null || true
+          find src-tauri/target/aarch64-apple-darwin/release/bundle/macos -name "*.app.tar.gz.sig" -exec cp {} release-files/ \; 2>/dev/null || true
+          find src-tauri/target/release/bundle/macos -name "*.app.tar.gz.sig" -exec cp {} release-files/ \; 2>/dev/null || true
+
+          ls -la release-files
+          test -n "$(ls -A release-files)"
+
+      - name: Upload files to GitHub Release tag pr-build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="pr-build"
+
+          if ! gh release view "$TAG" -R "$GH_REPO" >/dev/null 2>&1; then
+            gh release create "$TAG" \
+              -R "$GH_REPO" \
+              --title "PR Build" \
+              --notes "Latest PR build artifacts (auto-updated by CI)." \
+              --prerelease
+          fi
+
+          # Keep pr-build release clean: remove all previous assets first.
+          gh release view "$TAG" -R "$GH_REPO" --json assets --jq '.assets[].name' | while IFS= read -r asset; do
+            [ -n "$asset" ] || continue
+            gh release delete-asset "$TAG" "$asset" -R "$GH_REPO" -y
+          done
+
+          gh release upload "$TAG" -R "$GH_REPO" release-files/* --clobber
